@@ -1,0 +1,226 @@
+{
+	"menu_id" : "interactionindicator_options",
+	"parent_menu_id" : "blt_options",
+	"title" : "menu_interactionindicator_options_title",
+	"description" : "menu_interactionindicator_options_desc",
+	"back_callback" : "callback_interactionindicator_back",
+	"items" : [
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_hud_compatibility_mode",
+			"title" : "menu_interactionindicator_hud_compatibility_mode_title",
+			"description" : "menu_interactionindicator_hud_compatibility_mode_desc",
+			"callback" : "callback_interactionindicator_hud_compatibility_mode",
+			"value" : "hud_compatibility_mode"
+		},
+		{
+			"type" : "divider",
+			"size" : 16
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_indicator_line_visible_on_mouseover",
+			"title" : "menu_interactionindicator_indicator_line_visible_on_mouseover_title",
+			"description" : "menu_interactionindicator_indicator_line_visible_on_mouseover_desc",
+			"callback" : "callback_interactionindicator_indicator_line_visible_on_mouseover",
+			"value" : "indicator_line_visible_on_mouseover"
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_indicator_line_visible_on_interact",
+			"title" : "menu_interactionindicator_indicator_line_visible_on_interact_title",
+			"description" : "menu_interactionindicator_indicator_line_visible_on_interact_desc",
+			"callback" : "callback_interactionindicator_indicator_line_visible_on_interact",
+			"value" : "indicator_line_visible_on_interact"
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_line_w",
+			"title" : "menu_interactionindicator_line_w_title",
+			"description" : "menu_interactionindicator_line_w_desc",
+			"callback" : "callback_interactionindicator_line_w",
+			"value" : "line_w",
+			"default_value" : 2,
+			"min" : 0,
+			"max" : 4,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_line_alpha",
+			"title" : "menu_interactionindicator_line_alpha_title",
+			"description" : "menu_interactionindicator_line_alpha_desc",
+			"callback" : "callback_interactionindicator_line_alpha",
+			"value" : "line_alpha",
+			"default_value" : 0.5,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.1
+		},
+		{
+			"type" : "button",
+			"id" : "interactionindicator_colorpicker_set_line_color",
+			"title" : "menu_interactionindicator_colorpicker_set_line_color_title",
+			"description" : "menu_interactionindicator_colorpicker_set_line_color_desc",
+			"callback" : "callback_interactionindicator_colorpicker_set_line_color"
+		},
+		{
+			"type" : "divider",
+			"size" : 8
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_indicator_dot_visible_on_mouseover",
+			"title" : "menu_interactionindicator_indicator_dot_visible_on_mouseover_title",
+			"description" : "menu_interactionindicator_indicator_dot_visible_on_mouseover_desc",
+			"callback" : "callback_interactionindicator_indicator_dot_visible_on_mouseover",
+			"value" : "indicator_dot_visible_on_mouseover"
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_indicator_dot_visible_on_interact",
+			"title" : "menu_interactionindicator_indicator_dot_visible_on_interact_title",
+			"description" : "menu_interactionindicator_indicator_dot_visible_on_interact_desc",
+			"callback" : "callback_interactionindicator_indicator_dot_visible_on_interact",
+			"value" : "indicator_dot_visible_on_interact"
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_dot_radius",
+			"title" : "menu_interactionindicator_dot_radius_title",
+			"description" : "menu_interactionindicator_dot_radius_desc",
+			"callback" : "callback_interactionindicator_dot_radius",
+			"value" : "dot_radius",
+			"default_value" : 4,
+			"min" : 1,
+			"max" : 32,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_dot_alpha",
+			"title" : "menu_interactionindicator_dot_alpha_title",
+			"description" : "menu_interactionindicator_dot_alpha_desc",
+			"callback" : "callback_interactionindicator_dot_alpha",
+			"value" : "dot_alpha",
+			"default_value" : 0.5,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.1
+		},
+		{
+			"type" : "button",
+			"id" : "interactionindicator_colorpicker_set_dot_color",
+			"title" : "menu_interactionindicator_colorpicker_set_dot_color_title",
+			"description" : "menu_interactionindicator_colorpicker_set_dot_color_desc",
+			"callback" : "callback_interactionindicator_colorpicker_set_dot_color"
+		},
+		{
+			"type" : "divider",
+			"size" : 8
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_circle_enabled",
+			"title" : "menu_interactionindicator_circle_enabled_title",
+			"description" : "menu_interactionindicator_circle_enabled_desc",
+			"callback" : "callback_interactionindicator_circle_enabled",
+			"value" : "circle_enabled"
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "interactionindicator_circle_alignment_mode",
+			"title" : "menu_interactionindicator_circle_alignment_mode_title",
+			"description" : "menu_interactionindicator_circle_alignment_mode_desc",
+			"callback" : "callback_interactionindicator_circle_alignment_mode",
+			"items" : [
+				"menu_interactionindicator_circle_alignment_mode_option_centered",
+				"menu_interactionindicator_circle_alignment_mode_option_targeted"
+			],
+			"value" : "circle_alignment_mode"
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_circle_radius",
+			"title" : "menu_interactionindicator_circle_radius_title",
+			"description" : "menu_interactionindicator_circle_radius_desc",
+			"callback" : "callback_interactionindicator_circle_radius",
+			"value" : "circle_radius",
+			"default_value" : 32,
+			"min" : 1,
+			"max" : 128,
+			"step" : 16
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_circle_screen_margin",
+			"title" : "menu_interactionindicator_circle_screen_margin_title",
+			"description" : "menu_interactionindicator_circle_screen_margin_desc",
+			"callback" : "callback_interactionindicator_circle_screen_margin",
+			"value" : "circle_screen_margin",
+			"default_value" : 16,
+			"min" : 0,
+			"max" : 128,
+			"step" : 1
+		},
+		{
+			"type" : "divider",
+			"size" : 8
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_text_enabled",
+			"title" : "menu_interactionindicator_text_enabled_title",
+			"description" : "menu_interactionindicator_text_enabled_desc",
+			"callback" : "callback_interactionindicator_text_enabled",
+			"value" : "text_enabled"
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_text_font_size",
+			"title" : "menu_interactionindicator_text_font_size_title",
+			"description" : "menu_interactionindicator_text_font_size_desc",
+			"callback" : "callback_interactionindicator_text_font_size",
+			"value" : "text_font_size",
+			"default_value" : 32,
+			"min" : 1,
+			"max" : 64,
+			"step" : 1
+		},
+		{
+			"type" : "slider",
+			"id" : "interactionindicator_timer_accuracy",
+			"title" : "menu_interactionindicator_timer_accuracy_title",
+			"description" : "menu_interactionindicator_timer_accuracy_desc",
+			"callback" : "callback_interactionindicator_timer_accuracy",
+			"value" : "timer_accuracy",
+			"default_value" : 32,
+			"min" : 0,
+			"max" : 2,
+			"step" : 1
+		},
+		{
+			"type" : "button",
+			"id" : "interactionindicator_colorpicker_set_text_color",
+			"title" : "menu_interactionindicator_colorpicker_set_text_color_title",
+			"description" : "menu_interactionindicator_colorpicker_set_text_color_desc",
+			"callback" : "callback_interactionindicator_colorpicker_set_text_color"
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_timer_show_total",
+			"title" : "menu_interactionindicator_timer_show_total_title",
+			"description" : "menu_interactionindicator_timer_show_total_desc",
+			"callback" : "callback_interactionindicator_timer_show_total",
+			"value" : "timer_show_total"
+		},
+		{
+			"type" : "toggle",
+			"id" : "interactionindicator_timer_show_seconds_suffix",
+			"title" : "menu_interactionindicator_timer_show_seconds_suffix_title",
+			"description" : "menu_interactionindicator_timer_show_seconds_suffix_desc",
+			"callback" : "callback_interactionindicator_timer_show_seconds_suffix",
+			"value" : "timer_show_seconds_suffix"
+		}
+	]
+}
