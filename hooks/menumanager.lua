@@ -515,7 +515,7 @@ end
 function InteractionIndicator:ShowInteractionBar(hudinteraction,current,total)
 	--set the panel visible
 	if current and alive(self._panel) then
---		OffyLib:c_log("ShowInteractionBar()")
+		--OffyLib:c_log("ShowInteractionBar()")
 		self:ShowInteractionProgress(hudinteraction,current,total)
 		if self.settings.text_enabled then
 			self._panel:child("interaction_text"):show()
@@ -602,8 +602,8 @@ function InteractionIndicator:Update(t,dt)
 			local is_deploying = state:is_deploying()
 			
 			local interaction_data = state._interaction
-			local is_interacting = state:_interacting() or (interaction_data and interaction_data._active_object_locked_data)
---			if is_interacting or is_deploying then
+			local is_interacting = state:_interacting() or (interaction_data and interaction_data._active_object_locked_data and true or false)
+			
 			local pos
 			local to_pos
 			local to_x,to_y = panel:center()
@@ -908,35 +908,12 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 			end
 			
 			if VHUDPlus then 
-			--[[
-				Hooks:PostHook(HUDInteraction,"init","interactionindicator_init",function(self,hud,child_name)
-					InteractionIndicator:CreateHUD()
-				end)
-
-				Hooks:PostHook(HUDInteraction,"show_interact","interactionindicator_showinteract",function(self,data)
-					InteractionIndicator:ShowInteractText(self,data)
-				end)
-
-				Hooks:PostHook(HUDInteraction,"remove_interact","interactionindicator_removeinteract",function(self)
-					InteractionIndicator:HideInteractText(self)
-				end)
-
-				Hooks:PostHook(HUDInteraction,"show_interaction_bar","interactionindicator_showinteractionbar",function(self,current,total)
-					InteractionIndicator:ShowInteractionBar(self,current,total)
-				end)
-
-				Hooks:PostHook(HUDInteraction,"set_interaction_bar_width","interactionindicator_setinteractionprogress",function(self,current,total)
-					InteractionIndicator:ShowInteractionProgress(self,current,total)
-				end)
-
-				Hooks:PostHook(HUDInteraction,"hide_interaction_bar","interactionindicator_hideinteractionbar",function(self,complete)
+				
+				Hooks:PostHook(HUDManager,"remove_interact","vhud_interactionindicator_removeinteract",function(self)
+					local complete = nil
 					InteractionIndicator:HideInteractionBar(self,complete)
 				end)
-
-				Hooks:PostHook(HUDInteraction,"set_bar_valid","interactionindicator_setbarvalid",function(self,valid,text_id)
-					InteractionIndicator:SetInteractTextValid(self,valid,text_id)
-				end)
-				--]]
+				
 			end
 			
 		end)
