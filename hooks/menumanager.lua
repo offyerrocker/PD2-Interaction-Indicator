@@ -502,7 +502,7 @@ function InteractionIndicator:HideInteractText(hudinteraction)
 	--hide invalid-text
 	if alive(self._panel) then
 		self._panel:child("interaction_text"):hide()
---		OffyLib:c_log("HideInteractText()")
+		--OffyLib:c_log("HideInteractText()")
 		if not self.settings.indicator_dot_visible_on_mouseover then 
 			self._panel:child("indicator_dot"):hide()
 		end
@@ -628,8 +628,6 @@ function InteractionIndicator:Update(t,dt)
 				end
 			end
 			
-			
-			
 			if circle_screen_margin > 0 then
 				to_x = math.clamp(to_x,interaction_circle_screen_margin,panel:w() - interaction_circle_screen_margin)
 				to_y = math.clamp(to_y,interaction_circle_screen_margin,panel:h() - interaction_circle_screen_margin)
@@ -665,15 +663,6 @@ function InteractionIndicator:Update(t,dt)
 			
 			indicator_line:set_position(ix,iy)
 			
---					if true then 
---						self._panel:child("interaction_text"):set_top(self._panel:child("interaction_circle"):bottom())
---						local text = self._panel:child("interaction_text")
---						text:set_top(self._panel:child("interaction_circle"):bottom())
---						local _x,_y,_w,_h = text:text_rect()
---						text:set_x((_w-self._panel:w() / 2) + self._panel:child("interaction_circle"):x())
---						local 
---					end	
-			
 			if not is_deploying then
 				if is_interacting then
 					indicator_dot:set_visible(indicator_dot_visible_on_interact)
@@ -682,15 +671,19 @@ function InteractionIndicator:Update(t,dt)
 					--interaction data is available
 					indicator_dot:set_visible(indicator_dot_visible_on_mouseover)
 					indicator_line:set_visible(indicator_line_visible_on_mouseover)
+				else
+					--todo call this only on de-targeting an interaction
+					if indicator_dot:visible() then
+						indicator_dot:hide()
+					end
+					if indicator_line:visible() then
+						indicator_line:hide()
+					end
 				end
 			end
 				
 			indicator_dot:set_rotation(angle) --this shouldn't matter too much since the texture is a circle
 			indicator_dot:set_world_center(to_x,to_y)
---			else
---				indicator_line:hide()
---				indicator_dot:hide()
---			end
 		end
 	end
 end
@@ -904,16 +897,13 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 				Hooks:PostHook(MUIInteract,"set_bar_valid","interactionindicator_setbarvalid",callback(ii,ii,"SetInteractTextValid"))
 --				Hooks:PostHook(MUIInteract,"show","",function(self)end)
 --				Hooks:PostHook(MUIInteract,"hide","",function(self)end)
-				
 			end
 			
 			if VHUDPlus then 
-				
 				Hooks:PostHook(HUDManager,"remove_interact","vhud_interactionindicator_removeinteract",function(self)
 					local complete = nil
 					InteractionIndicator:HideInteractionBar(self,complete)
 				end)
-				
 			end
 			
 		end)

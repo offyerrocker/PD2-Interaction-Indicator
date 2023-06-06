@@ -26,10 +26,8 @@ Hooks:PostHook(HUDInteraction,"set_bar_valid","interactionindicator_setbarvalid"
 	InteractionIndicator:SetInteractTextValid(self,valid,text_id)
 end)
 
-local orig_animate_interaction_complete = HUDInteraction._animate_interaction_complete
-function HUDInteraction:_animate_interaction_complete(bitmap, circle,...)
+Hooks:OverrideFunction(HUDInteraction,"_animate_interaction_complete",function(self,bitmap, circle,...)
 	if InteractionIndicator.settings.circle_enabled then
-		
 		if alive(bitmap) then 
 			bitmap:stop()
 			bitmap:parent():remove(bitmap)
@@ -39,6 +37,6 @@ function HUDInteraction:_animate_interaction_complete(bitmap, circle,...)
 			circle:remove()
 		end
 	else
-		return orig_animate_interaction_complete(self,bitmap,circle,...)
+		return Hooks:GetFunction(HUDInteraction,"_animate_interaction_complete")(self,bitmap,circle,...)
 	end
-end
+end)
