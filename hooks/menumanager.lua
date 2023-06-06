@@ -479,11 +479,20 @@ function InteractionIndicator:ShowInteractText(hudinteraction,data)
 	--show valid-text
 	--hide invalid-text
 	if alive(self._panel) then
-		if self.settings.indicator_dot_visible_on_mouseover then 
-			self._panel:child("indicator_dot"):show()
+		local is_deploying
+		local player = managers.player:local_player()
+		if alive(player) then 
+			is_deploying = player:movement():current_state():is_deploying()
 		end
-		if self.settings.indicator_line_visible_on_mouseover then 
-			self._panel:child("indicator_line"):show()
+		
+		if not is_deploying then
+--			OffyLib:c_log("ShowInteractText()")
+			if self.settings.indicator_dot_visible_on_mouseover then 
+				self._panel:child("indicator_dot"):show()
+			end
+			if self.settings.indicator_line_visible_on_mouseover then 
+				self._panel:child("indicator_line"):show()
+			end
 		end
 	end
 end
@@ -493,7 +502,7 @@ function InteractionIndicator:HideInteractText(hudinteraction)
 	--hide invalid-text
 	if alive(self._panel) then
 		self._panel:child("interaction_text"):hide()
-		
+--		OffyLib:c_log("HideInteractText()")
 		if not self.settings.indicator_dot_visible_on_mouseover then 
 			self._panel:child("indicator_dot"):hide()
 		end
@@ -506,6 +515,7 @@ end
 function InteractionIndicator:ShowInteractionBar(hudinteraction,current,total)
 	--set the panel visible
 	if current and alive(self._panel) then
+--		OffyLib:c_log("ShowInteractionBar()")
 		self:ShowInteractionProgress(hudinteraction,current,total)
 		if self.settings.text_enabled then
 			self._panel:child("interaction_text"):show()
@@ -513,30 +523,43 @@ function InteractionIndicator:ShowInteractionBar(hudinteraction,current,total)
 		if self.settings.circle_enabled then 
 			self._panel:child("interaction_circle"):show()
 			self._panel:child("interaction_circle_bg"):show()
-			
-			if hudinteraction._interact_circle then 
-				-- _interact_circle is a CircleGuiObject class instance that holds the interaction circle, not the circle itself, so alive() won't work
-				hudinteraction._interact_circle:set_visible(false) --GETTA OUTTA HERE
+			if hudinteraction then 
+				if hudinteraction._interact_circle then 
+					-- _interact_circle is a CircleGuiObject class instance that holds the interaction circle, not the circle itself, so alive() won't work
+					hudinteraction._interact_circle:set_visible(false) --GETTA OUTTA HERE
+				end
+				if alive(hudinteraction._circle) then 
+					--MUI compatibility; hudinteraction in this case is MUIInteract
+					hudinteraction._circle:stop()
+					hudinteraction._circle:hide()
+				end
 			end
-			if alive(hudinteraction._circle) then 
-				--MUI compatibility; hudinteraction in this case is MUIInteract
-				hudinteraction._circle:stop()
-				hudinteraction._circle:hide()
+			if hudinteraction._interact_circle_locked then 
+				--VanillaHUD+ compatibility
+--				hudinteraction._interact_circle_locked:hide()
 			end
-			
 		end
 	end
 end
 function InteractionIndicator:HideInteractionBar(hudinteraction,complete)
 	--set the panel invisible
-	if alive(self._panel) then
-		self._panel:child("interaction_text"):hide()
+	local panel = self._panel
+	if alive(panel) then
+		panel:child("interaction_text"):hide()
 		
-		self._panel:child("interaction_circle"):hide()
-		self._panel:child("interaction_circle_bg"):hide()
+		local interaction_circle = panel:child("interaction_circle")
+		local interaction_circle_bg = panel:child("interaction_circle_bg")
+		interaction_circle:hide()
+		interaction_circle_bg:hide()
+--		local c_x,c_y = panel:center()
+--		interaction_circle:set_center(c_x,c_y)
+--		interaction_circle_bg:set_center(c_x,c_y)
 		
-		self._panel:child("indicator_line"):hide()
-		self._panel:child("indicator_dot"):hide()
+		
+		--OffyLib:c_log("HideInteractionBar()")
+		panel:child("indicator_line"):hide()
+		panel:child("indicator_dot"):hide()
+		
 		if complete then 
 			self:AnimateInteractionComplete()
 		end
@@ -559,71 +582,89 @@ function InteractionIndicator:Update(t,dt)
 	
 --	local hudinteraction = managers.hud._hud_interaction
 	local line_w = self.settings.line_w
-	if alive(self._panel) then
-		local indicator_line = self._panel:child("indicator_line")
-		local indicator_dot = self._panel:child("indicator_dot")
+	local panel = self._panel
+	if alive(panel) then
+		local indicator_line = panel:child("indicator_line")
+		local indicator_dot = panel:child("indicator_dot")
+		
+		local current_game_state = game_state_machine:last_queued_state_name()
 		
 		local player = managers.player:local_player()
 		if alive(player) then
 			local state = player:movement():current_state()
 			
+			if current_game_state == "ingame_access_camera" then-- or game_state_machine:verify_game_state(GameStateFilters.need_revive,current_game_state) then
+				indicator_dot:set_visible(false)
+				indicator_line:set_visible(false)
+				return
+			end
+			
+			local is_deploying = state:is_deploying()
+			
 			local interaction_data = state._interaction
-			if interaction_data then
-				local is_interacting = (state:_interacting() or interaction_data._active_object_locked_data) and not state:is_deploying()
-				local active_unit = interaction_data:active_unit()
-				if active_unit then 
-					local pos
-					
-					local obj = self:GetInteractObject(active_unit)
-					
-					if obj then 
-						if obj.oobb and obj:oobb() then 
-							pos = obj:oobb():center()
-						else
-							pos = obj:position()
-						end
+			local is_interacting = state:_interacting() or (interaction_data and interaction_data._active_object_locked_data)
+--			if is_interacting or is_deploying then
+			local pos
+			local to_pos
+			local to_x,to_y = panel:center()
+			
+			local active_unit = interaction_data and interaction_data:active_unit()
+			if active_unit and not is_deploying then
+				pos = pos or (active_unit:oobb() and active_unit:oobb():center()) or active_unit:position()
+			
+				local obj = self:GetInteractObject(active_unit)
+				
+				if obj then 
+					if obj.oobb and obj:oobb() then 
+						pos = obj:oobb():center()
+					else
+						pos = obj:position()
 					end
-					pos = pos or (active_unit:oobb() and active_unit:oobb():center()) or active_unit:position()
-					
-					local ws = managers.hud._fullscreen_workspace
-					local to_pos = ws:world_to_screen(managers.viewport:get_current_camera(),pos)
-					local to_x,to_y = to_pos.x,to_pos.y
-					
-					if circle_screen_margin > 0 then
-						to_x = math.clamp(to_x,interaction_circle_screen_margin,self._panel:w() - interaction_circle_screen_margin)
-						to_y = math.clamp(to_y,interaction_circle_screen_margin,self._panel:h() - interaction_circle_screen_margin)
-					end
-					
-					local from_x,from_y = self._panel:child("indicator_home"):world_center() --world center
-					
-					if align_circle_to_target then 
-						--draw line from screen center
-						--(offset by user preference)
-						self._panel:child("interaction_circle"):set_world_center(to_x,to_y)
-						self._panel:child("interaction_circle_bg"):set_world_center(to_x,to_y)
-						local interaction_circle_ghost = self._panel:child("interaction_circle_ghost")
-						if alive(interaction_circle_ghost) then 
-							interaction_circle_ghost:set_world_center(to_x,to_y)
-						end
-					end
-					
-					local d_x = (to_x - from_x) - (line_w / 2)
-					local d_y = to_y - from_y
-					
-					local hyp = math.sqrt((d_x * d_x) + (d_y * d_y))
-					
-					local angle = math.atan(d_y / d_x) + 90
-					
-					
-					indicator_line:set_h(hyp)
-					indicator_line:set_rotation(angle)
-					
-					local ix,iy = self._panel:child("indicator_home"):center() --hudinteraction._hud_panel:center()
-					ix = ix + (d_x/2)
-					iy = iy + (d_y/2) - (hyp / 2)
-					
-					indicator_line:set_position(ix,iy)
-					
+				end
+				
+				to_pos = managers.hud._fullscreen_workspace:world_to_screen(managers.viewport:get_current_camera(),pos)
+				if to_pos then
+					to_x,to_y = to_pos.x,to_pos.y
+				end
+			end
+			
+			
+			
+			if circle_screen_margin > 0 then
+				to_x = math.clamp(to_x,interaction_circle_screen_margin,panel:w() - interaction_circle_screen_margin)
+				to_y = math.clamp(to_y,interaction_circle_screen_margin,panel:h() - interaction_circle_screen_margin)
+			end
+			
+			local from_x,from_y = panel:child("indicator_home"):world_center() --world center
+			
+			if align_circle_to_target then 
+				--draw line from screen center
+				--(offset by user preference)
+				panel:child("interaction_circle"):set_world_center(to_x,to_y)
+				panel:child("interaction_circle_bg"):set_world_center(to_x,to_y)
+				local interaction_circle_ghost = panel:child("interaction_circle_ghost")
+				if alive(interaction_circle_ghost) then 
+					interaction_circle_ghost:set_world_center(to_x,to_y)
+				end
+			end
+			
+			local d_x = (to_x - from_x) - (line_w / 2)
+			local d_y = to_y - from_y
+			
+			local hyp = math.sqrt((d_x * d_x) + (d_y * d_y))
+			
+			local angle = math.atan(d_y / d_x) + 90
+			
+			
+			indicator_line:set_h(hyp)
+			indicator_line:set_rotation(angle)
+			
+			local ix,iy = panel:child("indicator_home"):center() --hudinteraction._hud_panel:center()
+			ix = ix + (d_x/2)
+			iy = iy + (d_y/2) - (hyp / 2)
+			
+			indicator_line:set_position(ix,iy)
+			
 --					if true then 
 --						self._panel:child("interaction_text"):set_top(self._panel:child("interaction_circle"):bottom())
 --						local text = self._panel:child("interaction_text")
@@ -632,23 +673,24 @@ function InteractionIndicator:Update(t,dt)
 --						text:set_x((_w-self._panel:w() / 2) + self._panel:child("interaction_circle"):x())
 --						local 
 --					end	
-					
-					
-					if is_interacting then
-						indicator_dot:set_visible(indicator_dot_visible_on_interact)
-						indicator_line:set_visible(indicator_line_visible_on_interact)
-					else
-						indicator_dot:set_visible(indicator_dot_visible_on_mouseover)
-						indicator_line:set_visible(indicator_line_visible_on_mouseover)
-					end
-					
-					indicator_dot:set_rotation(angle) --this shouldn't matter too much since the texture is a circle
-					indicator_dot:set_world_center(to_x,to_y)
-				else
-					indicator_line:hide()
-					indicator_dot:hide()
+			
+			if not is_deploying then
+				if is_interacting then
+					indicator_dot:set_visible(indicator_dot_visible_on_interact)
+					indicator_line:set_visible(indicator_line_visible_on_interact)
+				elseif active_unit then 
+					--interaction data is available
+					indicator_dot:set_visible(indicator_dot_visible_on_mouseover)
+					indicator_line:set_visible(indicator_line_visible_on_mouseover)
 				end
 			end
+				
+			indicator_dot:set_rotation(angle) --this shouldn't matter too much since the texture is a circle
+			indicator_dot:set_world_center(to_x,to_y)
+--			else
+--				indicator_line:hide()
+--				indicator_dot:hide()
+--			end
 		end
 	end
 end
@@ -695,7 +737,7 @@ function InteractionIndicator:ShowInteractionProgress(hudinteraction,current,tot
 	if self.settings.circle_enabled then
 		if alive(self._panel) then 
 			self._panel:child("interaction_circle"):set_color(Color(current/total,1,1))
-			
+--			OffyLib:c_log("ShowInteractionProgress()")
 			if self.settings.text_enabled then
 				local format_string = self:GetTimerFormat()
 				
@@ -863,6 +905,38 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 --				Hooks:PostHook(MUIInteract,"show","",function(self)end)
 --				Hooks:PostHook(MUIInteract,"hide","",function(self)end)
 				
+			end
+			
+			if VHUDPlus then 
+			--[[
+				Hooks:PostHook(HUDInteraction,"init","interactionindicator_init",function(self,hud,child_name)
+					InteractionIndicator:CreateHUD()
+				end)
+
+				Hooks:PostHook(HUDInteraction,"show_interact","interactionindicator_showinteract",function(self,data)
+					InteractionIndicator:ShowInteractText(self,data)
+				end)
+
+				Hooks:PostHook(HUDInteraction,"remove_interact","interactionindicator_removeinteract",function(self)
+					InteractionIndicator:HideInteractText(self)
+				end)
+
+				Hooks:PostHook(HUDInteraction,"show_interaction_bar","interactionindicator_showinteractionbar",function(self,current,total)
+					InteractionIndicator:ShowInteractionBar(self,current,total)
+				end)
+
+				Hooks:PostHook(HUDInteraction,"set_interaction_bar_width","interactionindicator_setinteractionprogress",function(self,current,total)
+					InteractionIndicator:ShowInteractionProgress(self,current,total)
+				end)
+
+				Hooks:PostHook(HUDInteraction,"hide_interaction_bar","interactionindicator_hideinteractionbar",function(self,complete)
+					InteractionIndicator:HideInteractionBar(self,complete)
+				end)
+
+				Hooks:PostHook(HUDInteraction,"set_bar_valid","interactionindicator_setbarvalid",function(self,valid,text_id)
+					InteractionIndicator:SetInteractTextValid(self,valid,text_id)
+				end)
+				--]]
 			end
 			
 		end)
