@@ -3,7 +3,7 @@
 	"description" : "Graphically displays a line pointing to the object you're interacting with.",
 	"author" : "Offyerrocker",
 	"contact" : "https://modworkshop.net/user/1356",
-	"version" : "1.0.4",
+	"version" : "2.0.0",
 	"blt_version" : 2,
 	"image" : "iiicon.png",
 	"color" : "255 255 255",

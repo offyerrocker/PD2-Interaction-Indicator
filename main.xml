@@ -1,5 +1,5 @@
 <mod name="Interaction Indicator" author="Offyerrocker" color="Color(0.4,0.7,1)" global_key="InteractionIndicatorCore" >
-	<AssetUpdates id="39897" version="1.0.4" provider="modworkshop" install_directory="mods/" version_is_number="false" />
+	<AssetUpdates id="39897" version="2.0.0" provider="modworkshop" install_directory="mods/" version_is_number="false" />
 	<Localization directory="localization" default="english.json" >
 		<loc file="english.json" language="english" />
 	</Localization>

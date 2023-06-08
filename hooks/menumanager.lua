@@ -17,6 +17,8 @@ end
 
 InteractionIndicator.url_colorpicker = "https://modworkshop.net/mod/29641"
 
+InteractionIndicator._timer_format_string = "%0.1f"
+
 InteractionIndicator.settings = {
 	hud_compatibility_mode = false,
 		--[bool]
@@ -121,6 +123,8 @@ InteractionIndicator.settings = {
 	text_y = 480,
 		--[float] vertical coordinate
 		--no menu option
+	text_color = 0xffffff,
+		--[number] a hexadecimal number representing the text color.
 	timer_accuracy = 1,
 		--[int] [0-2] decimal place accuracy
 	timer_show_total = false,
@@ -131,11 +135,9 @@ InteractionIndicator.settings = {
 		--[bool]
 		--	true: shows the seconds suffix after each time value 
 		--	false: does not show the seconds suffix
-	timer_seconds_suffix = "s",
+	timer_seconds_suffix = "s"
 		--[string] the suffix to show after the timer, eg. "12.5s/30s" or "12.5s"
 		--no menu option
-	text_color = 0xffffff
-		--[number] a hexadecimal number representing the text color.
 }
 
 InteractionIndicator.default_palettes = {
@@ -200,14 +202,12 @@ InteractionIndicator.settings_sort = {
 	"text_valign",
 	"text_x",
 	"text_y",
-	"timer_accuracy",
 	"text_color",
+	"timer_accuracy",
 	"timer_show_total",
 	"timer_show_seconds_suffix",
 	"timer_seconds_suffix"
 }
-
-InteractionIndicator._timer_format_string = "%0.1f"
 
 do
 	--load ini parser
@@ -223,33 +223,18 @@ do
 	end
 end
 
-
+--debug only; requires Console
 function InteractionIndicator:log(s,...)
-	if _G.Log then 
-		_G.Log("[InteractionIndicator] " .. tostring(s),...)
+	if Console then 
+		Console:Log("[InteractionIndicator] " .. tostring(s),...)
 	else
 		log("[InteractionIndicator] " .. tostring(s))
 	end
 end
 
 
-function InteractionIndicator:GetInteractObject(unit)
-	--given a unit being interacted with, returns the object associated with the interaction point
-	
-	if unit then
-		local interaction_ext = unit:interaction() 
-		if interaction_ext then 
-			obj = interaction_ext._interact_obj
-		end
-		
-		if not obj then 
-			obj = unit:get_object(Idstring("Spine")) or unit:get_object(Idstring("Head"))
-		end
-		
-		return obj
-	end
-end
 
+--creates (or deletes and recreates) the ii hud elements
 function InteractionIndicator:CreateHUD()
 	if not managers.hud then 
 		return
@@ -393,6 +378,7 @@ function InteractionIndicator:CreateHUD()
 	managers.hud:add_updator("interactionindicator_update",callback(self,self,"Update"))
 end
 
+--removes ii's interaction circle ghost element (used in completion animation only)
 function InteractionIndicator:StopAnimateInteractionComplete()
 	if alive(self._panel) then 
 		local ghost = self._panel:child("interaction_circle_ghost")
@@ -402,8 +388,8 @@ function InteractionIndicator:StopAnimateInteractionComplete()
 	end
 end
 
+--create the circle ghost and start the animation
 function InteractionIndicator:AnimateInteractionComplete()
-	
 	if alive(self._panel) then
 		local align_circle_to_target = self.settings.circle_alignment_mode == 2
 		local circle_animate_duration = self.settings.circle_animate_duration
@@ -475,9 +461,11 @@ function InteractionIndicator:AnimateInteractionComplete()
 	end
 end
 
-function InteractionIndicator:ShowInteractText(hudinteraction,data)
-	--show valid-text
-	--hide invalid-text
+--called once when a new interaction object is moused over
+function InteractionIndicator:OnStartMouseoverInteractable(hudinteraction,data)
+	--show line and dot only if mouseover is enabled
+	--or if the current "interaction" is deploying a deployable equipment
+	
 	if alive(self._panel) then
 		local is_deploying
 		local player = managers.player:local_player()
@@ -497,78 +485,148 @@ function InteractionIndicator:ShowInteractText(hudinteraction,data)
 	end
 end
 
-function InteractionIndicator:HideInteractText(hudinteraction)
-	--hide valid-text
-	--hide invalid-text
+--called once when mousing away from the current interaction object
+--also called once when mousing over a new interaction object, before OnStartMouseoverInteractable()
+--also called once on "dirty" (instant) interact
+function InteractionIndicator:OnStopInteraction(hudinteraction)
+	--hide text, dot, and line
+	--the custom ii circle is hidden in the completion animation instead of here
+	
 	if alive(self._panel) then
 		self._panel:child("interaction_text"):hide()
 		--OffyLib:c_log("HideInteractText()")
-		if not self.settings.indicator_dot_visible_on_mouseover then 
-			self._panel:child("indicator_dot"):hide()
-		end
-		if not self.settings.indicator_line_visible_on_mouseover then 
+		
+		local is_mouseover = self:GetInteractionActiveUnit() and true or false
+				
+		if is_mouseover then
+			if not self.settings.indicator_dot_visible_on_mouseover then 
+				self._panel:child("indicator_dot"):hide()
+			end
+			if not self.settings.indicator_line_visible_on_mouseover then 
+				self._panel:child("indicator_line"):hide()
+			end
+		else
 			self._panel:child("indicator_line"):hide()
+			self._panel:child("indicator_dot"):hide()
 		end
 	end
 end
 
-function InteractionIndicator:ShowInteractionBar(hudinteraction,current,total)
-	--set the panel visible
-	if current and alive(self._panel) then
-		--OffyLib:c_log("ShowInteractionBar()")
-		self:ShowInteractionProgress(hudinteraction,current,total)
+--called once when interaction begins
+function InteractionIndicator:OnInteractionStart(hudinteraction,current,total)
+	--show text, dot, and line (according to settings)
+	--also show the custom interact circle if that is enabled
+	if alive(self._panel) then
+		self:SetInteractionProgress(hudinteraction,current,total)
+		if self.settings.indicator_line_visible_on_interact then
+			self._panel:child("indicator_dot"):show()
+			self._panel:child("indicator_line"):show()
+			
+		end
+		
 		if self.settings.text_enabled then
 			self._panel:child("interaction_text"):show()
 		end
-		if self.settings.circle_enabled then 
+		
+		if self.settings.circle_enabled then
+			--show ii custom interaction circle
 			self._panel:child("interaction_circle"):show()
 			self._panel:child("interaction_circle_bg"):show()
+
+			--hide the game's default interact circle when custom circle is enabled 
 			if hudinteraction then 
-				if hudinteraction._interact_circle then 
-					-- _interact_circle is a CircleGuiObject class instance that holds the interaction circle, not the circle itself, so alive() won't work
-					hudinteraction._interact_circle:set_visible(false) --GETTA OUTTA HERE
-				end
+				
+				--MUI compatibility; hudinteraction in this case is MUIInteract
 				if alive(hudinteraction._circle) then 
-					--MUI compatibility; hudinteraction in this case is MUIInteract
+					--hide MUI's interaction circle
 					hudinteraction._circle:stop()
 					hudinteraction._circle:hide()
 				end
-			end
-			if hudinteraction._interact_circle_locked then 
-				--VanillaHUD+ compatibility
---				hudinteraction._interact_circle_locked:hide()
+				
+				--PDTH HUD: don't attempt to hide the interaction progress bar, since that HUD has a mod option already
+				
+				--default pd2 hud: hide interact circle
+				if hudinteraction._interact_circle and hudinteraction._interact_circle.set_visible then 
+					-- _interact_circle is a CircleGuiObject wrapper, not the GuiObject itself, so alive() won't work
+					hudinteraction._interact_circle:set_visible(false) --GETTA OUTTA HERE
+				end
 			end
 		end
 	end
 end
-function InteractionIndicator:HideInteractionBar(hudinteraction,complete)
-	--set the panel invisible
+
+--called every frame while interaction is in progress, to update hud progress
+--also called once at interaction start to reset visual state
+function InteractionIndicator:SetInteractionProgress(hudinteraction,current,total)
+	if alive(self._panel) then 
+		if self.settings.circle_enabled then
+			self._panel:child("interaction_circle"):set_color(Color(current/total,1,1))
+		end
+		if self.settings.text_enabled then
+			local format_string = self:GetTimerFormat()
+			
+			local timer_counts_down = self.settings.timer_counts_down	
+			local countdown
+			if timer_counts_down then 
+				countdown = current
+			else
+				countdown = total - current
+			end
+		
+			local interaction_text = self._panel:child("interaction_text")
+			if alive(interaction_text) then
+				interaction_text:set_text(string.format(format_string,countdown,total))
+			end
+		end
+	end
+end
+
+--called once when interaction ends
+--note that this still may be called when manually cancelling an interaction (releasing the button) but continuing to look at the interaction object
+function InteractionIndicator:OnInteractionEnd(hudinteraction,complete)
 	local panel = self._panel
 	if alive(panel) then
 		panel:child("interaction_text"):hide()
 		
-		local interaction_circle = panel:child("interaction_circle")
-		local interaction_circle_bg = panel:child("interaction_circle_bg")
-		interaction_circle:hide()
-		interaction_circle_bg:hide()
---		local c_x,c_y = panel:center()
---		interaction_circle:set_center(c_x,c_y)
---		interaction_circle_bg:set_center(c_x,c_y)
+		panel:child("interaction_circle"):hide()
+		panel:child("interaction_circle_bg"):hide()
 		
+		local is_mouseover = self:GetInteractionActiveUnit() and true or false
 		
-		--OffyLib:c_log("HideInteractionBar()")
-		panel:child("indicator_line"):hide()
-		panel:child("indicator_dot"):hide()
+		if is_mouseover then
+			if not self.settings.indicator_dot_visible_on_mouseover then 
+				panel:child("indicator_dot"):hide()
+			end
+			if not self.settings.indicator_line_visible_on_mouseover then 
+				panel:child("indicator_line"):hide()
+			end
+		else
+			panel:child("indicator_line"):hide()
+			panel:child("indicator_dot"):hide()
+		end
+		
 		
 		if complete then 
-			self:AnimateInteractionComplete()
+			if self.settings.circle_enabled then
+				self:AnimateInteractionComplete()
+			end
 		end
 	end
 end
 
+--called each frame when deploying deployable equipment (eg. doc bag)
+function InteractionIndicator:SetInteractTextValid(hudinteraction,valid,text_id)
+	--normally, pd2 uses this to determine which text to show:
+	--the red "invalid placement" text, or the white "placing xyz deployable..." text
+	--but ii only shows the timer, so it is not necessary for ii to do anything at this point
+end
+
+
+--update function; runs every frame
+--when interaction is active, updates the render position for custom hud elements such as the line and dot, and circle if circle target alignment is enabled
 function InteractionIndicator:Update(t,dt)
 	local use_custom_interact_circle = self.settings.circle_enabled
-	local align_circle_to_target = use_custom_interact_circle and self.settings.circle_alignment_mode == 2
+	local align_circle_to_target = self.settings.circle_alignment_mode == 2
 
 	local indicator_dot_visible_on_mouseover = self.settings.indicator_dot_visible_on_mouseover
 	local indicator_dot_visible_on_interact = self.settings.indicator_dot_visible_on_interact
@@ -593,6 +651,9 @@ function InteractionIndicator:Update(t,dt)
 		if alive(player) then
 			local state = player:movement():current_state()
 			
+			--camera access interaction triggers a different camera perspective but this doesn't affect the current interaction object
+			--so manually hide the interaction when entering the camera access state
+			--known issue: camera access will not show the dot/line when exiting camera access until looking away from the interact object; probably won't bother fixing that
 			if current_game_state == "ingame_access_camera" then-- or game_state_machine:verify_game_state(GameStateFilters.need_revive,current_game_state) then
 				indicator_dot:set_visible(false)
 				indicator_line:set_visible(false)
@@ -663,6 +724,9 @@ function InteractionIndicator:Update(t,dt)
 			
 			indicator_line:set_position(ix,iy)
 			
+			--[[
+			--this is redundant now
+			--it's inefficient anyway
 			if not is_deploying then
 				if is_interacting then
 					indicator_dot:set_visible(indicator_dot_visible_on_interact)
@@ -672,7 +736,6 @@ function InteractionIndicator:Update(t,dt)
 					indicator_dot:set_visible(indicator_dot_visible_on_mouseover)
 					indicator_line:set_visible(indicator_line_visible_on_mouseover)
 				else
-					--todo call this only on de-targeting an interaction
 					if indicator_dot:visible() then
 						indicator_dot:hide()
 					end
@@ -681,11 +744,43 @@ function InteractionIndicator:Update(t,dt)
 					end
 				end
 			end
+			--]]
 				
 			indicator_dot:set_rotation(angle) --this shouldn't matter too much since the texture is a circle
 			indicator_dot:set_world_center(to_x,to_y)
 		end
 	end
+end
+
+--given a unit being interacted with, returns the object associated with the interaction point
+function InteractionIndicator:GetInteractObject(unit)
+	if unit then
+		local interaction_ext = unit:interaction() 
+		if interaction_ext then 
+			obj = interaction_ext._interact_obj
+		end
+		
+		if not obj then 
+			obj = unit:get_object(Idstring("Spine")) or unit:get_object(Idstring("Head"))
+		end
+		
+		return obj
+	end
+end
+
+--returns active aimed-at interaction unit or nil
+function InteractionIndicator:GetInteractionActiveUnit()
+	local player = managers.player:local_player()
+	if alive(player) then
+		local state = player:movement():current_state()
+		local interaction_data = state._interaction
+		local active_unit = interaction_data and interaction_data:active_unit()
+		
+		if active_unit and alive(active_unit) then
+			return active_unit
+		end
+	end
+	return nil
 end
 
 function InteractionIndicator:GenerateTimerFormat()
@@ -725,48 +820,6 @@ end
 function InteractionIndicator:GetTimerFormat()
 	return self._timer_format_string
 end
-
-function InteractionIndicator:ShowInteractionProgress(hudinteraction,current,total)
-	if self.settings.circle_enabled then
-		if alive(self._panel) then 
-			self._panel:child("interaction_circle"):set_color(Color(current/total,1,1))
---			OffyLib:c_log("ShowInteractionProgress()")
-			if self.settings.text_enabled then
-				local format_string = self:GetTimerFormat()
-				
-				local timer_counts_down = self.settings.timer_counts_down	
-				local countdown
-				if timer_counts_down then 
-					countdown = current
-				else
-					countdown = total - current
-				end
-				
---				if true then
---					format_string = string.format("%" .. ca .. cs .. "/%" .. ca .. cs,countdown,total)
---				else
---					format_string = string.format("%" .. ca .. cs,countdown)
---				end
-				
-				self._panel:child("interaction_text"):set_text(string.format(format_string,countdown,total))
---				self._panel:child("interaction_text"):set_text(string.format("%0.1f / %0.1f",current,total))
-			end
---			self._panel:child("interaction_circle_bg")
-		end
-	end
-
-end
-
-function InteractionIndicator:SetInteractTextValid(hudinteraction,valid,text_id)
-	if alive(self._panel) then 
-	
-		self._panel:child("interaction_text"):show()
-		
-	end
-	--hide valid-text
-	--show invalid-text
-end
-
 
 function InteractionIndicator:GetPalettes()
 	local palettes = {}
@@ -873,43 +926,16 @@ function InteractionIndicator:LoadSettings()
 end
 
 
-Hooks:Add("LocalizationManagerPostInit", "interactionindicator_LocalizationManagerPostInit", function( loc )
+Hooks:Add("LocalizationManagerPostInit", "interactionindicator_LocalizationManagerPostInit", function(loc)
 	if not BeardLib then
-		loc:load_localization_file( InteractionIndicator._default_localization_path)
+		loc:load_localization_file(InteractionIndicator._default_localization_path)
 	end
 end)
 
 Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize", function(menu_manager)
 	
 	InteractionIndicator:LoadSettings()
-	
-	if InteractionIndicator.settings.hud_compatibility_mode then
-		Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",function()
-			InteractionIndicator:CreateHUD()
-			
-			if MUIInteract then 
-				local ii = InteractionIndicator
-				Hooks:PostHook(MUIInteract,"show_interact","interactionindicator_showinteract",callback(ii,ii,"ShowInteractText"))
-				Hooks:PostHook(MUIInteract,"remove_interact","interactionindicator_removeinteract",callback(ii,ii,"HideInteractText"))
-				Hooks:PostHook(MUIInteract,"show_interaction_bar","interactionindicator_showinteractionbar",callback(ii,ii,"ShowInteractionBar"))
-				Hooks:PostHook(MUIInteract,"set_interaction_bar_width","interactionindicator_setinteractionprogress",callback(ii,ii,"ShowInteractionProgress"))
-				Hooks:PostHook(MUIInteract,"hide_interaction_bar","interactionindicator_hideinteractionbar",callback(ii,ii,"HideInteractionBar"))
-				Hooks:PostHook(MUIInteract,"set_bar_valid","interactionindicator_setbarvalid",callback(ii,ii,"SetInteractTextValid"))
---				Hooks:PostHook(MUIInteract,"show","",function(self)end)
---				Hooks:PostHook(MUIInteract,"hide","",function(self)end)
-			end
-			
-			if VHUDPlus then 
-				Hooks:PostHook(HUDManager,"remove_interact","vhud_interactionindicator_removeinteract",function(self)
-					local complete = nil
-					InteractionIndicator:HideInteractionBar(self,complete)
-				end)
-			end
-			
-		end)
-		
-	end
-	
+
 	if ColorPicker then
 		InteractionIndicator._colorpicker = ColorPicker:new("interactionindicator_colorpicker",{
 			color = Color.white, --placeholder data until a specific setting button is pressed
@@ -1039,17 +1065,20 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	MenuCallbackHandler.callback_interactionindicator_timer_accuracy = function(self,item)
 		local value = tonumber(item:value())
 		InteractionIndicator.settings.timer_accuracy = value
+		InteractionIndicator:GenerateTimerFormat()
 		InteractionIndicator:SaveSettings()
 	end
 	--[set text color button]
 	MenuCallbackHandler.callback_interactionindicator_timer_show_total = function(self,item)
 		local value = item:value() == "on"
 		InteractionIndicator.settings.timer_show_total = value
+		InteractionIndicator:GenerateTimerFormat()
 		InteractionIndicator:SaveSettings()
 	end
 	MenuCallbackHandler.callback_interactionindicator_timer_show_seconds_suffix = function(self,item)
 		local value = item:value() == "on"
 		InteractionIndicator.settings.timer_show_seconds_suffix = value
+		InteractionIndicator:GenerateTimerFormat()
 		InteractionIndicator:SaveSettings()
 	end
 	
@@ -1058,4 +1087,65 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	end
 	
 	MenuHelper:LoadFromJsonFile(InteractionIndicator._menu_path, InteractionIndicator, InteractionIndicator.settings)
+end)
+	
+Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",function()
+	
+	local ii = InteractionIndicator
+	if ii.settings.hud_compatibility_mode then
+		ii:CreateHUD()
+		
+		if _G.MUIInteract then 
+			Hooks:PostHook(MUIInteract,"show_interact","interactionindicator_showinteract",callback(ii,ii,"OnStartMouseoverInteractable"))
+			Hooks:PostHook(MUIInteract,"remove_interact","interactionindicator_removeinteract",callback(ii,ii,"OnStopInteraction"))
+			Hooks:PostHook(MUIInteract,"show_interaction_bar","interactionindicator_showinteractionbar",callback(ii,ii,"OnInteractionStart"))
+			Hooks:PostHook(MUIInteract,"set_interaction_bar_width","interactionindicator_setinteractionprogress",callback(ii,ii,"SetInteractionProgress"))
+			Hooks:PostHook(MUIInteract,"hide_interaction_bar","interactionindicator_hideinteractionbar",callback(ii,ii,"OnInteractionEnd"))
+			Hooks:PostHook(MUIInteract,"set_bar_valid","interactionindicator_setbarvalid",callback(ii,ii,"SetInteractTextValid"))
+--				Hooks:PostHook(MUIInteract,"show","",function(self)end)
+--				Hooks:PostHook(MUIInteract,"hide","",function(self)end)
+		end
+		
+		if _G.VHUDPlus then 
+			--no action needed for compatibility
+		end
+		
+		if _G.PDTHHud then
+			--manual post exec required
+			
+			local orig_show_interact = HUDInteraction.show_interact
+			function HUDInteraction:show_interact(data,...)
+				ii:OnStartMouseoverInteractable(self,data)
+				return orig_show_interact(self,data,...)
+			end
+			
+			local orig_remove_interact = HUDInteraction.remove_interact
+			function HUDInteraction:remove_interact(...)
+				ii:OnStopInteraction(self)
+				return orig_remove_interact(self,...)
+			end
+			
+			local orig_show_interaction_bar = HUDInteraction.show_interaction_bar
+			function HUDInteraction:show_interaction_bar(current,total,...)
+				ii:OnInteractionStart(self,current,total)
+				return orig_show_interaction_bar(self,current,total,...)
+			end
+			
+			local orig_set_interact_progress = HUDInteraction.set_interaction_bar_width
+			function HUDInteraction:set_interaction_bar_width(current,total,...)
+				ii:SetInteractionProgress(self,current,total)
+				return orig_set_interact_progress(self,current,total,...)
+			end
+			
+			local orig_hide_interaction_bar = HUDInteraction.hide_interaction_bar
+			function HUDInteraction:hide_interaction_bar(complete,...)
+				ii:OnInteractionEnd(self,complete)
+				return orig_hide_interaction_bar(self,complete,...)
+			end
+			
+			--SetInteractTextValid() isn't used anyway
+		end
+		
+	end
+	
 end)
