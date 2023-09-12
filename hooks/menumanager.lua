@@ -18,6 +18,7 @@ end
 InteractionIndicator.url_colorpicker = "https://modworkshop.net/mod/29641"
 
 InteractionIndicator._timer_format_string = "%0.1f"
+--default; rebuilt on settings load/settings changed
 
 InteractionIndicator.settings = {
 	hud_compatibility_mode = false,
@@ -125,8 +126,11 @@ InteractionIndicator.settings = {
 		--no menu option
 	text_color = 0xffffff,
 		--[number] a hexadecimal number representing the text color.
-	timer_accuracy = 1,
-		--[int] [0-2] decimal place accuracy
+	timer_accuracy_places = 2,
+		--[int] [1-3] index representing decimal place accuracy choice.
+			--1: no decimal point, integer timer only (rounded)
+			--2: show 1 decimal place
+			--3: show 2 decimal places
 	timer_show_total = false,
 		--[bool]
 		--	true: shows the remaining interaction time and the total interaction time
@@ -135,9 +139,16 @@ InteractionIndicator.settings = {
 		--[bool]
 		--	true: shows the seconds suffix after each time value 
 		--	false: does not show the seconds suffix
-	timer_seconds_suffix = "s"
+	timer_seconds_suffix = "s",
 		--[string] the suffix to show after the timer, eg. "12.5s/30s" or "12.5s"
 		--no menu option
+	
+	timer_accuracy = nil
+		--DEPRECATED- DO NOT USE
+		--use timer_accuracy_places instead
+		--[float] [0-2]
+		--	number of decimal places shown
+		
 }
 
 InteractionIndicator.default_palettes = {
@@ -203,10 +214,12 @@ InteractionIndicator.settings_sort = {
 	"text_x",
 	"text_y",
 	"text_color",
-	"timer_accuracy",
+	"timer_accuracy_places",
 	"timer_show_total",
 	"timer_show_seconds_suffix",
-	"timer_seconds_suffix"
+	"timer_seconds_suffix",
+	
+	"timer_accuracy"
 }
 
 do
@@ -788,7 +801,7 @@ function InteractionIndicator:GenerateTimerFormat()
 	
 	local timer_text = ""
 	local timer_show_total = self.settings.timer_show_total
-	local timer_accuracy = math.round(self.settings.timer_accuracy)
+	local timer_accuracy = math.round(self.settings.timer_accuracy_places) - 1
 	local timer_show_seconds_suffix = self.settings.timer_show_seconds_suffix --show "s" seconds suffix 
 	local timer_seconds_suffix = self.settings.timer_seconds_suffix
 
@@ -911,12 +924,26 @@ function InteractionIndicator:LoadSettings()
 							self.settings[k] = v
 						end
 					end
+					
+					if config_from_ini.Config.timer_accuracy then 
+						--convert old timer accuracy setting (float) to new setting (int index)
+						
+						local rounded_places = math.round(config_from_ini.Config.timer_accuracy)
+						if rounded_places < 1 then
+							--preserve setting as "don't show decimals"
+							self.settings.timer_accuracy_places = 1
+						else
+							self.settings.timer_accuracy_places = math.clamp(rounded_places,1,2)
+						end
+						self.settings.timer_accuracy = nil
+					end
 				end
 				if config_from_ini.Palettes then 
 					for i,v in ipairs(config_from_ini.Palettes) do 
 						self.palettes[i] = string.format("%06x",v)
 					end
 				end
+				
 			end
 		else
 			self:SaveSettings()
@@ -1064,7 +1091,7 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	end
 	MenuCallbackHandler.callback_interactionindicator_timer_accuracy = function(self,item)
 		local value = tonumber(item:value())
-		InteractionIndicator.settings.timer_accuracy = value
+		InteractionIndicator.settings.timer_accuracy_places = value
 		InteractionIndicator:GenerateTimerFormat()
 		InteractionIndicator:SaveSettings()
 	end
@@ -1102,8 +1129,6 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 			Hooks:PostHook(MUIInteract,"set_interaction_bar_width","interactionindicator_setinteractionprogress",callback(ii,ii,"SetInteractionProgress"))
 			Hooks:PostHook(MUIInteract,"hide_interaction_bar","interactionindicator_hideinteractionbar",callback(ii,ii,"OnInteractionEnd"))
 			Hooks:PostHook(MUIInteract,"set_bar_valid","interactionindicator_setbarvalid",callback(ii,ii,"SetInteractTextValid"))
---				Hooks:PostHook(MUIInteract,"show","",function(self)end)
---				Hooks:PostHook(MUIInteract,"hide","",function(self)end)
 		end
 		
 		if _G.VHUDPlus then 

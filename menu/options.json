@@ -188,16 +188,18 @@
 			"step" : 1
 		},
 		{
-			"type" : "slider",
+			"type" : "multiple_choice",
 			"id" : "interactionindicator_timer_accuracy",
 			"title" : "menu_interactionindicator_timer_accuracy_title",
 			"description" : "menu_interactionindicator_timer_accuracy_desc",
 			"callback" : "callback_interactionindicator_timer_accuracy",
-			"value" : "timer_accuracy",
-			"default_value" : 32,
-			"min" : 0,
-			"max" : 2,
-			"step" : 1
+			"value" : "timer_accuracy_places",
+			"default_value" : 1,
+			"items" : [
+				"menu_interactionindicator_num_0",
+				"menu_interactionindicator_num_1",
+				"menu_interactionindicator_num_2"
+			]
 		},
 		{
 			"type" : "button",
