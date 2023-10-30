@@ -1,8 +1,8 @@
-
 HUDInteractionIndicator = class(HUDInteraction)
 
 --posthooking a custom class... galaxy brained
 local hooked_class = HUDInteractionIndicator
+InteractionIndicator.HUDInteractionIndicator = HUDInteractionIndicator
 
 Hooks:PostHook(hooked_class,"init","interactionindicator_init",function(self,hud,child_name)
 	InteractionIndicator:CreateHUD()

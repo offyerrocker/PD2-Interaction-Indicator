@@ -1123,52 +1123,24 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 		ii:CreateHUD()
 		
 		if _G.MUIInteract then 
-			Hooks:PostHook(MUIInteract,"show_interact","interactionindicator_showinteract",callback(ii,ii,"OnStartMouseoverInteractable"))
-			Hooks:PostHook(MUIInteract,"remove_interact","interactionindicator_removeinteract",callback(ii,ii,"OnStopInteraction"))
-			Hooks:PostHook(MUIInteract,"show_interaction_bar","interactionindicator_showinteractionbar",callback(ii,ii,"OnInteractionStart"))
-			Hooks:PostHook(MUIInteract,"set_interaction_bar_width","interactionindicator_setinteractionprogress",callback(ii,ii,"SetInteractionProgress"))
-			Hooks:PostHook(MUIInteract,"hide_interaction_bar","interactionindicator_hideinteractionbar",callback(ii,ii,"OnInteractionEnd"))
-			Hooks:PostHook(MUIInteract,"set_bar_valid","interactionindicator_setbarvalid",callback(ii,ii,"SetInteractTextValid"))
+			local path = InteractionIndicator._mod_path .. "compatibility/mui.lua"
+			if not success then
+				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
+			end
 		end
 		
 		if _G.VHUDPlus then 
-			--no action needed for compatibility
+			local success,err = blt.vm.dofile(InteractionIndicator._mod_path .. "compatibility/vanillahudplus.lua")
+			if not success then
+				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
+			end
 		end
 		
 		if _G.PDTHHud then
-			--manual post exec required
-			
-			local orig_show_interact = HUDInteraction.show_interact
-			function HUDInteraction:show_interact(data,...)
-				ii:OnStartMouseoverInteractable(self,data)
-				return orig_show_interact(self,data,...)
+			local success,err = blt.vm.dofile(InteractionIndicator._mod_path .. "compatibility/pdth.lua")
+			if not success then
+				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
 			end
-			
-			local orig_remove_interact = HUDInteraction.remove_interact
-			function HUDInteraction:remove_interact(...)
-				ii:OnStopInteraction(self)
-				return orig_remove_interact(self,...)
-			end
-			
-			local orig_show_interaction_bar = HUDInteraction.show_interaction_bar
-			function HUDInteraction:show_interaction_bar(current,total,...)
-				ii:OnInteractionStart(self,current,total)
-				return orig_show_interaction_bar(self,current,total,...)
-			end
-			
-			local orig_set_interact_progress = HUDInteraction.set_interaction_bar_width
-			function HUDInteraction:set_interaction_bar_width(current,total,...)
-				ii:SetInteractionProgress(self,current,total)
-				return orig_set_interact_progress(self,current,total,...)
-			end
-			
-			local orig_hide_interaction_bar = HUDInteraction.hide_interaction_bar
-			function HUDInteraction:hide_interaction_bar(complete,...)
-				ii:OnInteractionEnd(self,complete)
-				return orig_hide_interaction_bar(self,complete,...)
-			end
-			
-			--SetInteractTextValid() isn't used anyway
 		end
 		
 	end
