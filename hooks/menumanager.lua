@@ -638,7 +638,7 @@ end
 --update function; runs every frame
 --when interaction is active, updates the render position for custom hud elements such as the line and dot, and circle if circle target alignment is enabled
 function InteractionIndicator:Update(t,dt)
-	local use_custom_interact_circle = self.settings.circle_enabled
+--	local use_custom_interact_circle = self.settings.circle_enabled
 	local align_circle_to_target = self.settings.circle_alignment_mode == 2
 
 	local indicator_dot_visible_on_mouseover = self.settings.indicator_dot_visible_on_mouseover
@@ -1117,28 +1117,15 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 end)
 	
 Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",function()
-	
 	local ii = InteractionIndicator
 	if ii.settings.hud_compatibility_mode then
 		ii:CreateHUD()
 		
+		-- just does hook stuff so it's safe to do here
 		if _G.MUIInteract then 
 			local path = InteractionIndicator._mod_path .. "compatibility/mui.lua"
-			if not success then
-				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
-			end
-		end
-		
-		if _G.VHUDPlus then 
-			local success,err = blt.vm.dofile(InteractionIndicator._mod_path .. "compatibility/vanillahudplus.lua")
-			if not success then
-				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
-			end
-		end
-		
-		if _G.PDTHHud then
-			local success,err = blt.vm.dofile(InteractionIndicator._mod_path .. "compatibility/pdth.lua")
-			if not success then
+			local success,err = blt.vm.dofile(path)
+			if err then
 				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
 			end
 		end
