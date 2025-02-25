@@ -382,7 +382,7 @@ function InteractionIndicator:CreateHUD()
 		vertical = text_valign,
 		x = text_x,
 		y = text_y,
-		visible = false
+		visible = true -- leave visible but with empty string, since APPARENTLY the game can't be relied upon to show/hide it at the proper time
 	})
 	
 	interaction_circle:set_center(center_x + circle_x,center_y + circle_y)
@@ -506,7 +506,7 @@ function InteractionIndicator:OnStopInteraction(hudinteraction)
 	--the custom ii circle is hidden in the completion animation instead of here
 	
 	if alive(self._panel) then
-		self._panel:child("interaction_text"):hide()
+		self._panel:child("interaction_text"):set_text("")
 		--OffyLib:c_log("HideInteractText()")
 		
 		local is_mouseover = self:GetInteractionActiveUnit() and true or false
@@ -537,10 +537,11 @@ function InteractionIndicator:OnInteractionStart(hudinteraction,current,total)
 			
 		end
 		
-		if self.settings.text_enabled then
-			self._panel:child("interaction_text"):show()
-		end
-		
+		-- interaction text is now set to an empty string or the active interaction string instead of hiding/showing the object
+		--if self.settings.text_enabled then
+		--	self._panel:child("interaction_text"):show()
+		--end
+
 		if self.settings.circle_enabled then
 			--show ii custom interaction circle
 			self._panel:child("interaction_circle"):show()
@@ -586,20 +587,24 @@ function InteractionIndicator:SetInteractionProgress(hudinteraction,current,tota
 				countdown = total - current
 			end
 		
-			local interaction_text = self._panel:child("interaction_text")
-			if alive(interaction_text) then
-				interaction_text:set_text(string.format(format_string,countdown,total))
+			if self.settings.text_enabled then
+				local interaction_text = self._panel:child("interaction_text")
+				if alive(interaction_text) then
+					interaction_text:set_text(string.format(format_string,countdown,total))
+				end
 			end
+			
 		end
 	end
 end
 
 --called once when interaction ends
 --note that this still may be called when manually cancelling an interaction (releasing the button) but continuing to look at the interaction object
+-- update 3.0.2: at some point pd2 updated and now this is apparently also called to destroy the interaction circle when an interaction BEGINS, rendering OnInteractionStart pretty much useless
 function InteractionIndicator:OnInteractionEnd(hudinteraction,complete)
 	local panel = self._panel
 	if alive(panel) then
-		panel:child("interaction_text"):hide()
+		panel:child("interaction_text"):set_text("")
 		
 		panel:child("interaction_circle"):hide()
 		panel:child("interaction_circle_bg"):hide()
