@@ -508,20 +508,8 @@ function InteractionIndicator:OnStopInteraction(hudinteraction)
 	if alive(self._panel) then
 		self._panel:child("interaction_text"):set_text("")
 		--OffyLib:c_log("HideInteractText()")
-		
-		local is_mouseover = self:GetInteractionActiveUnit() and true or false
-				
-		if is_mouseover then
-			if not self.settings.indicator_dot_visible_on_mouseover then 
-				self._panel:child("indicator_dot"):hide()
-			end
-			if not self.settings.indicator_line_visible_on_mouseover then 
-				self._panel:child("indicator_line"):hide()
-			end
-		else
-			self._panel:child("indicator_line"):hide()
-			self._panel:child("indicator_dot"):hide()
-		end
+		self._panel:child("indicator_line"):hide()
+		self._panel:child("indicator_dot"):hide()
 	end
 end
 
