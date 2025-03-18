@@ -416,7 +416,7 @@ end
 function InteractionIndicator:RecreateHUDInteraction(hudmgr,hud)
 --	table.insert(_G.olib_loadorder,"II hudmanager create interaction")
 	if not hudmgr then 
-		self:log("InteractionIndicator:RecreateHUDInteraction() Bad argument #1 hudmgr")
+		--self:log("InteractionIndicator:RecreateHUDInteraction() Bad argument #1 hudmgr")
 		return
 	end
 	
@@ -434,16 +434,14 @@ function InteractionIndicator:GetHUDInteractionClass()
 	return self.HUDInteractionIndicator or HUDInteraction
 end
 
-function InteractionIndicator:ApplyHooks(base_hudinteraction_class)
+function InteractionIndicator:ApplyHooks(base_hudinteraction_class,hooked_class)
 
 	-- this class is ONLY for InteractionIndicator elements;
 	-- therefore, II hooks will only apply to this class,
 	-- and the hud interaction instance reserved for special interactions (such as being revived by bots)
 	-- will use the base HUDInteraction class
-	local HUDInteractionIndicator = class(base_hudinteraction_class or HUDInteraction)
 	
 	--posthooking a custom class... galaxy brained
-	local hooked_class = HUDInteractionIndicator
 	self.HUDInteractionIndicator = HUDInteractionIndicator
 
 	Hooks:PostHook(hooked_class,"init","interactionindicator_init",function(hud_interaction,hud,child_name)
