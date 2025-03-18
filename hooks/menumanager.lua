@@ -442,7 +442,8 @@ function InteractionIndicator:ApplyHooks(base_hudinteraction_class,hooked_class)
 	-- will use the base HUDInteraction class
 	
 	--posthooking a custom class... galaxy brained
-	self.HUDInteractionIndicator = HUDInteractionIndicator
+	hooked_class = hooked_class or class(base_hudinteraction_class or HUDInteraction)
+	self.HUDInteractionIndicator = hooked_class
 
 	Hooks:PostHook(hooked_class,"init","interactionindicator_init",function(hud_interaction,hud,child_name)
 		self:CreateHUD()
