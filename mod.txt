@@ -20,6 +20,14 @@
 		{
 			"hook_id" : "lib/managers/hudmanagerpd2",
 			"script_path" : "hooks/hudmanagerpd2.lua"
+		},
+		{
+			"hook_id" : "lib/states/gameoverstate",
+			"script_path" : "hooks/gameoverstate.lua"
+		},
+		{
+			"hook_id" : "lib/states/victorystate",
+			"script_path" : "hooks/gameoverstate.lua"
 		}
 	]
 }
