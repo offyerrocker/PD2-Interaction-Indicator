@@ -227,7 +227,7 @@ do
 	local f,e = blt.vm.loadfile(InteractionIndicator._mod_path .. "utils/LIP.lua")
 	local lip
 	if e then 
-		log("[Horizon Indicator in HUD] ERROR: Failed loading LIP module. Try re-installing BeardLib if this error persists.")
+		log("[InteractionIndicator] ERROR: Failed loading LIP module. Try re-installing BeardLib if this error persists.")
 	elseif f then 
 		lip = f()
 	end
