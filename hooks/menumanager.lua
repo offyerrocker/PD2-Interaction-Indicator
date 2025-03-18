@@ -1247,5 +1247,13 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 			end
 		end
 		
+		if _G.VoidUI then
+			local path = InteractionIndicator._mod_path .. "compatibility/voidui.lua"
+			local success,err = blt.vm.dofile(path)
+			if err then
+				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
+			end
+		end
+		
 	end
 end)
