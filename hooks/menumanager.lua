@@ -122,9 +122,9 @@ InteractionIndicator.settings = {
 		--[bool]
 		--	true: custom interaction timer is visible
 		--	false: custom interaction timer is not visible
-	text_font_name = "fonts/font_medium_shadow_mf",
+	text_font_name = tweak_data.hud.medium_font,
 		--[string] the asset path to the font used for the text
-		--no menu option
+		--no menu option; default to tweakdata on first boot
 	text_font_size = 32,
 		--[float] the size of the text
 	text_halign = "center",
