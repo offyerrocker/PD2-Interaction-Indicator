@@ -5,8 +5,6 @@ InteractionIndicator:ApplyHooks(base_interact_class)
 -- the hud has already been created at this point,
 -- but redefine it just in case it gets called again during the course of the game
 function HUDManager:_create_interaction()
-	table.insert(_G.olib_loadorder,"II-mui hudmanager create interaction")
-	
 	-- remove prev hud interaction
 	InteractionIndicator:RecreateHUDInteraction(self,self._mui_hud);
 end

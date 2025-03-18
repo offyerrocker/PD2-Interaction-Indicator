@@ -20,11 +20,6 @@ Base Behavior:
 
 --]]
 
-
-
-
-
-
 InteractionIndicator = InteractionIndicator or {}
 do 
 	local save_path = SavePath
@@ -414,7 +409,6 @@ end
 
 -- destroys the hudinteraction instance (if present) and creates a new instance using the cloned class specifically for interactions from the local player only (excludes bot revives and other player interactions)
 function InteractionIndicator:RecreateHUDInteraction(hudmgr,hud)
---	table.insert(_G.olib_loadorder,"II hudmanager create interaction")
 	if not hudmgr then 
 		--self:log("InteractionIndicator:RecreateHUDInteraction() Bad argument #1 hudmgr")
 		return
@@ -450,33 +444,28 @@ function InteractionIndicator:ApplyHooks(base_hudinteraction_class,hooked_class)
 	end)
 	
 	Hooks:PostHook(hooked_class,"show_interact","interactionindicator_showinteract",function(hud_interaction,data)
-		self:log("show_interact")
+		--self:log("show_interact")
 		self:OnStartMouseoverInteractable(hud_interaction,data)
-		--self:ShowInteractText(hud_interaction,data)
 	end)
 
 	Hooks:PostHook(hooked_class,"remove_interact","interactionindicator_removeinteract",function(hud_interaction)
-		self:log("remove_interact")
+		--self:log("remove_interact")
 		self:OnStopInteraction(hud_interaction)
-		--self:HideInteractText(hud_interaction)
 	end)
 
 	Hooks:PostHook(hooked_class,"show_interaction_bar","interactionindicator_showinteractionbar",function(hud_interaction,current,total)
-		self:log("show_interaction_bar " .. string.format("%0.1f",current) .. "/" .. string.format("%0.1f",total))
+		--self:log("show_interaction_bar " .. string.format("%0.1f",current) .. "/" .. string.format("%0.1f",total))
 		self:OnInteractionStart(hud_interaction,current,total)
-	--	self:ShowInteractionBar(hud_interaction,current,total)
 	end)
 
 	Hooks:PostHook(hooked_class,"set_interaction_bar_width","interactionindicator_setinteractionprogress",function(hud_interaction,current,total)
-		self:log("set_interaction_bar_width " .. string.format("%0.1f",current) .. "/" .. string.format("%0.1f",total))
+		--self:log("set_interaction_bar_width " .. string.format("%0.1f",current) .. "/" .. string.format("%0.1f",total))
 		self:SetInteractionProgress(hud_interaction,current,total)
-		--self:ShowInteractionProgress(hud_interaction,current,total)
 	end)
 
 	Hooks:PostHook(hooked_class,"hide_interaction_bar","interactionindicator_hideinteractionbar",function(hud_interaction,complete)
-		self:log("hide_interaction_bar " .. tostring(complete))
+		--self:log("hide_interaction_bar " .. tostring(complete))
 		self:OnInteractionEnd(hud_interaction,complete)
-		--self:HideInteractionBar(hud_interaction,complete)
 	end)
 
 	Hooks:PostHook(hooked_class,"set_bar_valid","interactionindicator_setbarvalid",function(hud_interaction,valid,text_id)
@@ -1223,13 +1212,11 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	
 	MenuHelper:LoadFromJsonFile(InteractionIndicator._menu_path, InteractionIndicator, InteractionIndicator.settings)
 end)
-	
+
 Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",function()
 	local ii = InteractionIndicator
 	if ii.settings.hud_compatibility_mode then
 		ii:CreateHUD()
-		
-		
 		
 		-- just does hook stuff so it's safe to do here
 		if _G.MUIInteract then 
