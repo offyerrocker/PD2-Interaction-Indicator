@@ -4,6 +4,27 @@
 --localization
 --colorpicker code
 
+
+--[[
+
+DEVELOPER NOTES FOR ANYONE DOING COMPATIBILITY PATCHES:
+(including future versions of myself that will likely have forgotten this)
+
+Base Behavior:
+-- clone HUDInteraction to HUDInteractionIndicator
+-- hook interaction events to HUDInteractionIndicator **ONLY**
+-- override HUDManagerPD2 interaction creation to use the cloned HUDInteractionIndicator class
+-- DON'T change HUDManager:pd_start_progress(), as this is where the fake interaction instance goes (used for bot revives etc);
+-- let it use the base HUDInteraction class
+
+
+--]]
+
+
+
+
+
+
 InteractionIndicator = InteractionIndicator or {}
 do 
 	local save_path = SavePath
@@ -389,6 +410,101 @@ function InteractionIndicator:CreateHUD()
 	interaction_circle_bg:set_center(center_x + circle_x,center_y + circle_y)
 	
 	managers.hud:add_updator("interactionindicator_update",callback(self,self,"Update"))
+end
+
+-- destroys the hudinteraction instance (if present) and creates a new instance using the cloned class specifically for interactions from the local player only (excludes bot revives and other player interactions)
+function InteractionIndicator:RecreateHUDInteraction(hudmgr,hud)
+--	table.insert(_G.olib_loadorder,"II hudmanager create interaction")
+	if not hudmgr then 
+		self:log("InteractionIndicator:RecreateHUDInteraction() Bad argument #1 hudmgr")
+		return
+	end
+	
+	if hudmgr._hud_interaction then
+		hudmgr._hud_interaction:destroy()
+		hudmgr._hud_interaction = nil
+	end
+	
+	hud = hud or managers.hud:script(PlayerBase.PLAYER_INFO_HUD_PD2)
+	local hudinteraction_class = self:GetHUDInteractionClass()
+	hudmgr._hud_interaction = hudinteraction_class:new(hud)
+end
+
+function InteractionIndicator:GetHUDInteractionClass()
+	return self.HUDInteractionIndicator or HUDInteraction
+end
+
+function InteractionIndicator:ApplyHooks(base_hudinteraction_class)
+
+	-- this class is ONLY for InteractionIndicator elements;
+	-- therefore, II hooks will only apply to this class,
+	-- and the hud interaction instance reserved for special interactions (such as being revived by bots)
+	-- will use the base HUDInteraction class
+	local HUDInteractionIndicator = class(base_hudinteraction_class or HUDInteraction)
+	
+	--posthooking a custom class... galaxy brained
+	local hooked_class = HUDInteractionIndicator
+	self.HUDInteractionIndicator = HUDInteractionIndicator
+
+	Hooks:PostHook(hooked_class,"init","interactionindicator_init",function(hud_interaction,hud,child_name)
+		self:CreateHUD()
+	end)
+	
+	Hooks:PostHook(hooked_class,"show_interact","interactionindicator_showinteract",function(hud_interaction,data)
+		self:log("show_interact")
+		self:OnStartMouseoverInteractable(hud_interaction,data)
+		--self:ShowInteractText(hud_interaction,data)
+	end)
+
+	Hooks:PostHook(hooked_class,"remove_interact","interactionindicator_removeinteract",function(hud_interaction)
+		self:log("remove_interact")
+		self:OnStopInteraction(hud_interaction)
+		--self:HideInteractText(hud_interaction)
+	end)
+
+	Hooks:PostHook(hooked_class,"show_interaction_bar","interactionindicator_showinteractionbar",function(hud_interaction,current,total)
+		self:log("show_interaction_bar " .. string.format("%0.1f",current) .. "/" .. string.format("%0.1f",total))
+		self:OnInteractionStart(hud_interaction,current,total)
+	--	self:ShowInteractionBar(hud_interaction,current,total)
+	end)
+
+	Hooks:PostHook(hooked_class,"set_interaction_bar_width","interactionindicator_setinteractionprogress",function(hud_interaction,current,total)
+		self:log("set_interaction_bar_width " .. string.format("%0.1f",current) .. "/" .. string.format("%0.1f",total))
+		self:SetInteractionProgress(hud_interaction,current,total)
+		--self:ShowInteractionProgress(hud_interaction,current,total)
+	end)
+
+	Hooks:PostHook(hooked_class,"hide_interaction_bar","interactionindicator_hideinteractionbar",function(hud_interaction,complete)
+		self:log("hide_interaction_bar " .. tostring(complete))
+		self:OnInteractionEnd(hud_interaction,complete)
+		--self:HideInteractionBar(hud_interaction,complete)
+	end)
+
+	Hooks:PostHook(hooked_class,"set_bar_valid","interactionindicator_setbarvalid",function(hud_interaction,valid,text_id)
+		--self:log("set_bar_valid")
+		self:SetInteractTextValid(hud_interaction,valid,text_id)
+	end)
+	
+	if not (VoidUI and VoidUI.options.enable_interact) then
+		-- default behavior
+		if hooked_class._animate_interaction_complete then
+			Hooks:PreHook(hooked_class,"_animate_interaction_complete",function(hud_interaction,bitmap,circle,...)
+				if self.settings.circle_enabled then
+					if alive(bitmap) then 
+						bitmap:stop()
+						bitmap:parent():remove(bitmap)
+					end
+					if alive(circle) then
+						circle:stop()
+						circle:remove()
+					end
+					
+					return true
+				end
+			end)
+		end
+	end
+	
 end
 
 --removes ii's interaction circle ghost element (used in completion animation only)
@@ -1114,6 +1230,8 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 	if ii.settings.hud_compatibility_mode then
 		ii:CreateHUD()
 		
+		
+		
 		-- just does hook stuff so it's safe to do here
 		if _G.MUIInteract then 
 			local path = InteractionIndicator._mod_path .. "compatibility/mui.lua"
@@ -1124,5 +1242,4 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 		end
 		
 	end
-	
 end)

@@ -5,7 +5,7 @@
 	"contact" : "https://modworkshop.net/user/1356",
 	"version" : "3.0.3",
 	"blt_version" : 2,
-	"priority" : 45,
+	"priority" : 0,
 	"image" : "icon.png",
 	"color" : "255 255 255",
 	"hooks" : [
@@ -18,9 +18,8 @@
 			"script_path" : "hooks/hudinteraction.lua"
 		},
 		{
-			"hook_id" : "lib/managers/hudmanager",
-			"script_path" : "hooks/hudmanager.lua"
+			"hook_id" : "lib/managers/hudmanagerpd2",
+			"script_path" : "hooks/hudmanagerpd2.lua"
 		}
-		
 	]
 }
