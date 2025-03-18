@@ -1239,6 +1239,13 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
 			end
 		end
+		if _G.SydneyHUD then
+			local path = InteractionIndicator._mod_path .. "compatibility/sydneyhud.lua"
+			local success,err = blt.vm.dofile(path)
+			if err then
+				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
+			end
+		end
 		
 	end
 end)
