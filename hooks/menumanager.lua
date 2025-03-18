@@ -239,7 +239,7 @@ end
 --debug only; requires Console
 function InteractionIndicator:log(s,...)
 	if Console then 
-		Console:Log("[InteractionIndicator] " .. tostring(s),...)
+		Console:Log("[InteractionIndicator] " .. os.date("%X ") .. tostring(s),...)
 	else
 		log("[InteractionIndicator] " .. tostring(s))
 	end
