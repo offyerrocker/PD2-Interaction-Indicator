@@ -49,5 +49,20 @@
 	"menu_interactionindicator_timer_show_total_title" : "Show Total Time",
 	"menu_interactionindicator_timer_show_total_desc" : "Displays the total interaction time in the timer text.",
 	"menu_interactionindicator_timer_show_seconds_suffix_title" : "Show \"Seconds\" Suffix",
-	"menu_interactionindicator_timer_show_seconds_suffix_desc" : "Displays the \"s\" abbreviation after the time value, eg. \"1.3s\"."
+	"menu_interactionindicator_timer_show_seconds_suffix_desc" : "Displays the \"s\" abbreviation after the time value, eg. \"1.3s\".",
+	
+	"menu_interactionindicator_circle_vanilla_animation_disabled_title" : "Disable Complete Animation",
+	"menu_interactionindicator_circle_vanilla_animation_disabled_desc" : "Prevents the HUD animation from playing when you complete an interaction.",
+	"menu_interactionindicator_text_hide_vanilla_title" : "Hide Interaction Text",
+	"menu_interactionindicator_text_hide_vanilla_desc" : "Hides the interaction prompt.",
+	"menu_interactionindicator_icon_enabled_title" : "Enable Interaction Icon",
+	"menu_interactionindicator_icon_enabled_desc" : "Enables showing an icon when you are looking at an interaction object",
+	"menu_interactionindicator_icon_size_title" : "Icon size",
+	"menu_interactionindicator_icon_size_desc" : "Set how large the icon is.",
+	"menu_interactionindicator_icon_alignment_mode_title" : "Icon Alignment Mode",
+	"menu_interactionindicator_icon_alignment_mode_desc" : "Change where to align the interaction icon",
+	"menu_interactionindicator_colorpicker_set_icon_color_title" : "Set Icon Color...",
+	"menu_interactionindicator_colorpicker_set_icon_color_desc" : "Requires ColorPicker mod",
+	"menu_interactionindicator_icon_alpha_title" : "Icon Alpha",
+	"menu_interactionindicator_icon_alpha_desc" : "The opacity of the indicator icon"
 }

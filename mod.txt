@@ -3,7 +3,7 @@
 	"description" : "Graphically displays a line pointing to the object you're interacting with.",
 	"author" : "Offyerrocker",
 	"contact" : "https://modworkshop.net/user/1356",
-	"version" : "3.1.0",
+	"version" : "3.2.0",
 	"blt_version" : 2,
 	"priority" : 0,
 	"image" : "icon.png",
@@ -20,6 +20,10 @@
 		{
 			"hook_id" : "lib/managers/hudmanagerpd2",
 			"script_path" : "hooks/hudmanagerpd2.lua"
+		},
+		{
+			"hook_id" : "lib/tweak_data/interactiontweakdata",
+			"script_path" : "hooks/interactiontweakdata.lua"
 		},
 		{
 			"hook_id" : "lib/states/gameoverstate",

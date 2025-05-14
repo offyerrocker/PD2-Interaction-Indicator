@@ -54,7 +54,7 @@ InteractionIndicator.settings = {
 	line_alpha = 0.5,
 		--[float] the opacity of the indicator line. smaller values are more transparent
 	line_color = 0xffffff,
-		--[number] a hexadecimal number representing the color of the custom interaction timer
+		--[number] a hexadecimal number representing the color of the custom interaction timer (note: stored as decimal)
 	line_blend_mode = "normal",
 		--[string]
 		--	"normal"
@@ -77,8 +77,8 @@ InteractionIndicator.settings = {
 	dot_alpha = 0.66,
 		--[float] the opacity of the indicator dot. smaller values are more transparent
 	dot_color = 0xffffff,
-		--[number] a hexadecimal number representing the color of the custom interaction timer
-		
+		--[number] a hexadecimal number representing the color of the custom interaction timer (note: stored as decimal)
+	
 	circle_enabled = true,
 		--[bool]
 		--	true: custom interaction circle is visible. also hides vanilla interaction circle
@@ -94,10 +94,10 @@ InteractionIndicator.settings = {
 		--[float] screen boundary margin
 		--interaction circle will stay this many pixels from the edge of the screen; set to 0 to allow offscreen clipping
 	circle_x = 0,
-		--[float] horizontal coordinate
+		--[float] horizontal coordinate. should be positive
 		--no menu option
 	circle_y = 0,
-		--[float] vertical coordinate
+		--[float] vertical coordinate. should be positive
 		--no menu option
 	circle_halign = 1,
 		--[int]
@@ -109,10 +109,49 @@ InteractionIndicator.settings = {
 		--	1: top; circle_y sign is unchanged (positive)
 		--	2: bottom; circle_y sign is reversed (negative)
 		--no menu option
+		
+	circle_vanilla_animation_disabled = false,
+		--[bool]
+		--	true: disable the hud animation that displays the "ghost" interaction circle when the interaction completes
+		--	false: do not prevent the hud animation from playing
 	circle_animate_duration = 0.33,
 		--[float] the amount of seconds for an animation to last before disappearing
 		--no menu option
+		
+	icon_enabled = false,
+		--[bool]
+		--	true: show interaction icon when mousing over an interaction
+		--	false: do not show interaction icon
+	icon_size = 32,
+		--[float] width AND height of interaction icon (fixed 1:1 image ratio)
+		-- actual asset resolution is 48x but it looks better at 32x
+	icon_x = 0,
+		--[float] horizontal coordinate, offset from screen center
+		--(no menu option)
+	icon_y = 0,
+		--[float] vertical coordinate, offset from screen center
+		--(no menu option)
+	icon_alpha = 1,
+		--[float] the opacity of the indicator dot. smaller values are more transparent
+	icon_blend_mode = "normal",
+		--[string]
+		--	"normal"
+		--	"add"
+		--	"sub"
+		--	"mul"
+		--	"mulx2"
+		--no menu option
+	icon_color = 0xffffff,
+		--[number] a hexadecimal number representing the text color. (note: stored as decimal)
+	icon_alignment_mode = 1,
+		--[int]
+		--	1: align in screen middle (vanilla/default)
+		--	2: align on object
 	
+	text_hide_vanilla = false,
+		--[bool]
+		--	true: hides vanilla interaction text ("Hold [F] to interact" etc)
+		--	false: does not hide or otherwise modify vanilla interaction text
 	text_enabled = true,
 		--[bool]
 		--	true: custom interaction timer is visible
@@ -141,7 +180,7 @@ InteractionIndicator.settings = {
 		--[float] vertical coordinate
 		--no menu option
 	text_color = 0xffffff,
-		--[number] a hexadecimal number representing the text color.
+		--[number] a hexadecimal number representing the text color. (note: stored as decimal)
 	timer_accuracy_places = 2,
 		--[int] [1-3] index representing decimal place accuracy choice.
 			--1: no decimal point, integer timer only (rounded)
@@ -164,7 +203,7 @@ InteractionIndicator.settings = {
 		--use timer_accuracy_places instead
 		--[float] [0-2]
 		--	number of decimal places shown
-		
+	
 }
 
 InteractionIndicator.default_palettes = {
@@ -276,6 +315,13 @@ function InteractionIndicator:CreateHUD()
 		self._panel = nil
 	end
 	
+	local icon_color = Color(string.format("%06x",self.settings.icon_color))
+	local icon_size = self.settings.icon_size
+	local icon_x = self.settings.icon_x
+	local icon_y = self.settings.icon_y
+	local icon_alpha = self.settings.icon_alpha
+	local icon_blend_mode = self.settings.icon_blend_mode
+	
 	local line_color = Color(string.format("%06x",self.settings.line_color))
 	local line_w = self.settings.line_w
 	local line_alpha = self.settings.line_alpha
@@ -323,6 +369,24 @@ function InteractionIndicator:CreateHUD()
 	end
 	self._panel = interactionindicator_panel
 	local center_x,center_y = interactionindicator_panel:center()
+	
+	local icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_generic_interact")
+	local indicator_icon = interactionindicator_panel:bitmap({
+		name = "indicator_icon",
+		texture = icon_texture,
+		texture_rect = icon_rect,
+		color = icon_color,
+		visible = false,
+		valign = "center",
+		blend_mode = icon_blend_mode,
+		alpha = icon_alpha,
+		w = icon_size,
+		h = icon_size,
+		layer = 4
+	})
+	indicator_icon:set_center_x((interactionindicator_panel:w()/2) + icon_x)
+	indicator_icon:set_center_y((interactionindicator_panel:h()/2) + icon_y)
+
 	
 	local indicator_line = interactionindicator_panel:rect({
 		name = "indicator_line",
@@ -473,26 +537,18 @@ function InteractionIndicator:ApplyHooks(base_hudinteraction_class,hooked_class)
 		self:SetInteractTextValid(hud_interaction,valid,text_id)
 	end)
 	
-	if not (VoidUI and VoidUI.options.enable_interact) then
-		-- default behavior
-		if hooked_class._animate_interaction_complete then
-			Hooks:PreHook(hooked_class,"_animate_interaction_complete",function(hud_interaction,bitmap,circle,...)
-				if self.settings.circle_enabled then
-					if alive(bitmap) then 
-						bitmap:stop()
-						bitmap:parent():remove(bitmap)
-					end
-					if alive(circle) then
-						circle:stop()
-						circle:remove()
-					end
-					
-					return true
+	if hooked_class._animate_interaction_complete then
+		Hooks:PreHook(hooked_class,"_animate_interaction_complete",function(...)
+			if self.settings.circle_vanilla_animation_disabled then
+				if alive(bitmap) then 
+					bitmap:hide()
 				end
-			end)
-		end
+				if alive(circle) then
+					circle:hide()
+				end
+			end
+		end)
 	end
-	
 end
 
 --removes ii's interaction circle ghost element (used in completion animation only)
@@ -599,7 +655,31 @@ function InteractionIndicator:OnStartMouseoverInteractable(hudinteraction,data)
 				self._panel:child("indicator_line"):show()
 			end
 		end
+	
+		if self.settings.icon_enabled then
+			local indicator_icon = self._panel:child("indicator_icon")
+			if alive(indicator_icon) then
+				indicator_icon:show()
+				if self.settings.icon_alignment_mode == 1 then 
+					indicator_icon:set_center_x((self._panel:w()/2) + self.settings.icon_x)
+					indicator_icon:set_center_y((self._panel:h()/2) + self.settings.icon_y)
+				end
+			end
+		end
+		
 	end
+	
+	if self.settings.text_hide_vanilla then
+		if alive(hudinteraction._hud_panel) and hudinteraction._child_name_text then 
+			local interact_text = hudinteraction._hud_panel:child(hudinteraction._child_name_text)
+			if interact_text then 
+				interact_text:set_alpha(0)
+				interact_text:hide()
+			end
+		end
+	end
+	
+	
 end
 
 --called once when mousing away from the current interaction object
@@ -614,6 +694,11 @@ function InteractionIndicator:OnStopInteraction(hudinteraction)
 		--OffyLib:c_log("HideInteractText()")
 		self._panel:child("indicator_line"):hide()
 		self._panel:child("indicator_dot"):hide()
+	end
+	
+	if self.settings.icon_enabled then
+		local indicator_icon = self._panel:child("indicator_icon")
+		indicator_icon:hide()
 	end
 end
 
@@ -717,7 +802,7 @@ function InteractionIndicator:OnInteractionEnd(hudinteraction,complete)
 		
 		
 		if complete then 
-			if self.settings.circle_enabled then
+			if self.settings.circle_vanilla_animation_disabled then
 				self:AnimateInteractionComplete()
 			end
 		end
@@ -729,6 +814,19 @@ function InteractionIndicator:SetInteractTextValid(hudinteraction,valid,text_id)
 	--normally, pd2 uses this to determine which text to show:
 	--the red "invalid placement" text, or the white "placing xyz deployable..." text
 	--but ii only shows the timer, so it is not necessary for ii to do anything at this point
+	
+	-- tbh i don't think interactions are ever set invalid except for equipment deploying,
+	-- which ii doesn't really do anything with
+	--[[
+	if alive(self._panel) then
+		local indicator_icon = self._panel:child("indicator_icon")
+		if self.settings.icon_enabled and alive(indicator_icon) then 
+			indicator_icon:set_color(Color.red)
+		else
+			indicator_icon:set_color(Color.white)
+		end
+	end
+	--]]
 end
 
 
@@ -737,6 +835,7 @@ end
 function InteractionIndicator:Update(t,dt)
 --	local use_custom_interact_circle = self.settings.circle_enabled
 	local align_circle_to_target = self.settings.circle_alignment_mode == 2
+	local align_icon_to_target = self.settings.icon_alignment_mode == 2
 
 	local indicator_dot_visible_on_mouseover = self.settings.indicator_dot_visible_on_mouseover
 	local indicator_dot_visible_on_interact = self.settings.indicator_dot_visible_on_interact
@@ -754,6 +853,7 @@ function InteractionIndicator:Update(t,dt)
 	if alive(panel) then
 		local indicator_line = panel:child("indicator_line")
 		local indicator_dot = panel:child("indicator_dot")
+		local indicator_icon = panel:child("indicator_icon")
 		
 		local current_game_state = game_state_machine:last_queued_state_name()
 		
@@ -767,6 +867,7 @@ function InteractionIndicator:Update(t,dt)
 			if current_game_state == "ingame_access_camera" then-- or game_state_machine:verify_game_state(GameStateFilters.need_revive,current_game_state) then
 				indicator_dot:set_visible(false)
 				indicator_line:set_visible(false)
+				indicator_icon:set_visible(false)
 				return
 			end
 			
@@ -797,6 +898,18 @@ function InteractionIndicator:Update(t,dt)
 				if to_pos then
 					to_x,to_y = to_pos.x,to_pos.y
 				end
+				
+				if self.settings.icon_enabled then
+					local interaction_ext = active_unit:interaction()
+					local interaction_id = interaction_ext and interaction_ext.tweak_data
+					local interaction_td = interaction_id and tweak_data.interaction[interaction_id]
+					if interaction_td then
+						local icon_id = interaction_td.icon or "pd2_generic_interact"
+						local icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data(icon_id)
+						indicator_icon:set_image(icon_texture,unpack(icon_rect))
+					end
+				end
+				
 			end
 			
 			if circle_screen_margin > 0 then
@@ -815,6 +928,10 @@ function InteractionIndicator:Update(t,dt)
 				if alive(interaction_circle_ghost) then 
 					interaction_circle_ghost:set_world_center(to_x,to_y)
 				end
+			end
+			
+			if align_icon_to_target then
+				indicator_icon:set_world_center(to_x,to_y)
 			end
 			
 			local d_x = (to_x - from_x) - (line_w / 2)
@@ -1106,6 +1223,18 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 		end
 	end
 	
+	MenuCallbackHandler.callback_interactionindicator_colorpicker_set_icon_color = function(self)
+		if InteractionIndicator._colorpicker then 
+			InteractionIndicator._colorpicker:Show({
+				color = Color(string.format("%06x",InteractionIndicator.settings.icon_color)),
+				palettes = InteractionIndicator:GetPalettes(),
+				done_callback = callback(InteractionIndicator,InteractionIndicator,"callback_colorpicker_done","icon_color")
+			})
+		else
+			InteractionIndicator:ShowMissingColorpickerDialogue()
+		end
+	end
+	
 	MenuCallbackHandler.callback_interactionindicator_hud_compatibility_mode = function(self,item)
 		local value = item:value() == "on"
 		InteractionIndicator.settings.hud_compatibility_mode = value
@@ -1155,6 +1284,67 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	end
 	--[set dot color button]
 	
+	MenuCallbackHandler.callback_interactionindicator_icon_enabled = function(self,item)
+		local value = item:value() == "on"
+		InteractionIndicator.settings.icon_enabled = value
+		--[[
+		if not value then 
+			local indicator_icon = alive(InteractionIndicator._panel) and InteractionIndicator._panel:child("indicator_icon")
+			if alive(indicator_icon) then 
+				indicator_icon:hide()
+			end
+		else
+			-- wait til next interaction mouseover to fix
+			-- this should only be noticeable if the player enables this setting while looking at a valid interaction
+			-- ...i just remembered that exiting the customization menu destroys and recreates the HUD anyway, so who cares
+		end
+		--]]
+		InteractionIndicator:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_interactionindicator_icon_size = function(self,item)
+		local value = item:value()
+		InteractionIndicator.settings.icon_size = value
+		--[[
+		local indicator_icon = alive(InteractionIndicator._panel) and InteractionIndicator._panel:child("indicator_icon")
+		if alive(indicator_icon) then 
+			indicator_icon:set_size(value,value)
+		end
+		--]]
+		InteractionIndicator:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_interactionindicator_icon_alpha = function(self,item)
+		local value = item:value()
+		InteractionIndicator.settings.icon_alpha = value
+		--[[
+		local indicator_icon = alive(InteractionIndicator._panel) and InteractionIndicator._panel:child("indicator_icon")
+		if alive(indicator_icon) then 
+			indicator_icon:set_alpha(value)
+		end
+		--]]
+		InteractionIndicator:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_interactionindicator_icon_alignment_mode = function(self,item)
+		local value = item:value()
+		InteractionIndicator.settings.icon_alignment_mode = value
+		--[[
+		if value == 1 then
+			local indicator_icon = alive(InteractionIndicator._panel) and InteractionIndicator._panel:child("indicator_icon")
+			if alive(indicator_icon) then 
+				indicator_icon:set_center_x((InteractionIndicator._panel:w()/2) + InteractionIndicator.settings.icon_x)
+				indicator_icon:set_center_y((InteractionIndicator._panel:h()/2) + InteractionIndicator.settings.icon_y)
+			end
+		elseif value == 2 then
+			-- for object-aligned orientation,
+			-- let the update func handle positioning
+		end
+		--]]
+		InteractionIndicator:SaveSettings()
+	end
+	--[set dot color button]
+	
 	MenuCallbackHandler.callback_interactionindicator_circle_enabled = function(self,item)
 		local value = item:value() == "on"
 		InteractionIndicator.settings.circle_enabled = value
@@ -1173,6 +1363,11 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	MenuCallbackHandler.callback_interactionindicator_circle_screen_margin = function(self,item)
 		local value = tonumber(item:value())
 		InteractionIndicator.settings.circle_screen_margin = value
+		InteractionIndicator:SaveSettings()
+	end
+	MenuCallbackHandler.callback_interactionindicator_circle_vanilla_animation_disabled = function(self,item)
+		local value = item:value() == "on"
+		InteractionIndicator.settings.circle_vanilla_animation_disabled = value
 		InteractionIndicator:SaveSettings()
 	end
 	
@@ -1204,6 +1399,26 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 		InteractionIndicator.settings.timer_show_seconds_suffix = value
 		InteractionIndicator:GenerateTimerFormat()
 		InteractionIndicator:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_interactionindicator_text_hide_vanilla = function(self,item)
+		local value = item:value() == "on"
+		InteractionIndicator.settings.text_hide_vanilla = value
+		--[[
+		if managers.hud._hud_interaction and alive(managers.hud._hud_interaction._hud_panel) then
+			local child_name_text = managers.hud._hud_interaction._hud_panel._child_name_text
+			local interact_text = child_name_text and managers.hud._hud_interaction._hud_panel:child(child_name_text)
+			if interact_text then 
+				if value then 
+					interact_text:set_alpha(0)
+					interact_text:hide()
+				else
+					interact_text:set_alpha(1)
+					-- don't actually show the text; let the game handle that as usual
+				end
+			end
+		end
+		--]]
 	end
 	
 	MenuCallbackHandler.callback_interactionindicator_back = function(self,item)
