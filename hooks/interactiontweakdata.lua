@@ -25,10 +25,10 @@ Hooks:PostHook(InteractionTweakData,"init","ii_interactiontweakdata_init",functi
 		"pick_lock_easy_no_skill_pent",
 		"pick_lock_hard",
 		"pick_lock_hard_no_skill",
-		"pick_lock_hard_no_skill_deactivated"
+		"pick_lock_hard_no_skill_deactivated",
 		"pick_lock_x_axis",
 		"trai_hold_picklock_toolsafe",
-		"trai_press_reinforced_big_sliding_gate_open",
+		"trai_press_reinforced_big_sliding_gate_open"
 	}) do 
 		self[id].icon = replacement_icon
 	end
