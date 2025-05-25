@@ -1404,11 +1404,10 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 	MenuCallbackHandler.callback_interactionindicator_text_hide_vanilla = function(self,item)
 		local value = item:value() == "on"
 		InteractionIndicator.settings.text_hide_vanilla = value
-		--[[
 		if managers.hud._hud_interaction and alive(managers.hud._hud_interaction._hud_panel) then
 			local child_name_text = managers.hud._hud_interaction._hud_panel._child_name_text
-			local interact_text = child_name_text and managers.hud._hud_interaction._hud_panel:child(child_name_text)
-			if interact_text then 
+			local interact_text = child_name_text and managers.hud._hud_interaction._hud_panel:child(child_name_text) or managers.hud._hud_interaction._hud_panel:child("interact_text")
+			if alive(interact_text) then 
 				if value then 
 					interact_text:set_alpha(0)
 					interact_text:hide()
@@ -1418,7 +1417,7 @@ Hooks:Add("MenuManagerInitialize", "interactionindicator_MenuManagerInitialize",
 				end
 			end
 		end
-		--]]
+		InteractionIndicator:SaveSettings()
 	end
 	
 	MenuCallbackHandler.callback_interactionindicator_back = function(self,item)
