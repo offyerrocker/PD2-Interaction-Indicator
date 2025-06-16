@@ -1429,7 +1429,7 @@ end)
 
 Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",function()
 	local ii = InteractionIndicator
-	if ii.settings.hud_compatibility_mode then
+	if ii.settings.hud_compatibility_mode and _G.HUDManager then
 		ii:CreateHUD()
 		
 		-- just does hook stuff so it's safe to do here
@@ -1455,6 +1455,5 @@ Hooks:Add("BaseNetworkSessionOnLoadComplete","interactionindicator_createhud",fu
 				InteractionIndicator:log("ERROR: Could not load [" .. path .. "]: " .. tostring(err)) 
 			end
 		end
-		
 	end
 end)
