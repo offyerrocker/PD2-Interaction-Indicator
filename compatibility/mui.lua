@@ -24,8 +24,10 @@ end
 
 function HUDManager:pd_stop_progress()
 	local intrct = self._mui_ii_nonplayer_hud_interaction;
-	intrct:hide_interaction_bar(intrct._circle:color().red >= 1);
-	intrct:remove_interact();
+	if intrct then
+		intrct:hide_interaction_bar(intrct._circle:color().red >= 1);
+		intrct:remove_interact();
+	end
 end
 
 -- and remove the existing hud interaction instance, recreate it with our cloned and hooked class instead
