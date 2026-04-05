@@ -881,7 +881,7 @@ function InteractionIndicator:Update(t,dt)
 			local to_x,to_y = panel:center()
 			
 			local active_unit = interaction_data and interaction_data:active_unit()
-			if active_unit and not is_deploying then
+			if active_unit and alive(active_unit) and not is_deploying then
 				pos = pos or (active_unit:oobb() and active_unit:oobb():center()) or active_unit:position()
 			
 				local obj = self:GetInteractObject(active_unit)
